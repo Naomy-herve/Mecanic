@@ -13,3 +13,6 @@ CREATE INDEX IF NOT EXISTS products_name_search_idx ON products USING GIN(to_tsv
 CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS orders_user_idx ON orders(user_id,created_at DESC);
 INSERT INTO categories(name,slug,description) VALUES('Moteur','moteur','Pièces moteur et périphériques'),('Freinage','freinage','Disques, plaquettes et composants de freinage'),('Filtration','filtration','Filtres à huile, air, carburant et habitacle'),('Carrosserie','carrosserie','Éléments extérieurs et carrosserie'),('Électricité','electricite','Éclairage, capteurs et composants électriques'),('Suspension','suspension','Amortisseurs, bras et direction') ON CONFLICT(slug) DO NOTHING;
+-- Authentication abuse prevention
+CREATE TABLE IF NOT EXISTS auth_attempts (id UUID PRIMARY KEY DEFAULT gen_random_uuid(),email TEXT NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS auth_attempts_email_created_idx ON auth_attempts(email,created_at DESC);
