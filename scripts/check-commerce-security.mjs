@@ -50,14 +50,14 @@ assert.match(adminVehiclesApi, /Ce véhicule existe déjà/, "L’API doit prév
 assert.match(adminVehicles, /setSaving\(true\)/, "Le formulaire véhicule doit empêcher les doubles soumissions.");
 assert.match(adminVehicles, /role="alert"/, "Les erreurs du formulaire véhicule doivent être annoncées.");
 assert.match(adminVehicles, /cache: "no-store"/, "La liste des véhicules doit être rechargée sans cache.");
-assert.match(adminCategories, /requireAdmin\\(\\)/, "La gestion des catégories doit être réservée aux administrateurs.");
+assert.match(adminCategories, /requireAdmin\(\)/, "La gestion des catégories doit être réservée aux administrateurs.");
 assert.match(adminCategories, /Cette catégorie contient encore des pièces/, "Une catégorie utilisée ne doit pas être supprimée.");
 assert.match(adminCategoriesPage, /cache: "no-store"/, "Les catégories doivent être rechargées sans cache.");
-assert.match(adminCategoriesPage, /setSaving\\(true\\)/, "Le formulaire de catégorie doit empêcher les doubles soumissions.");
+assert.match(adminCategoriesPage, /setSaving\(true\)/, "Le formulaire de catégorie doit empêcher les doubles soumissions.");
 assert.match(adminCategoriesPage, /deletingId/, "La suppression d'une catégorie doit avoir un état dédié.");
 assert.match(adminCategoriesPage, /role="alert"/, "Les erreurs de catégorie doivent être accessibles.");
 assert.match(adminEquivalentsPage, /cache: "no-store"/, "Les équivalences doivent être chargées sans cache.");
-assert.match(adminEquivalentsPage, /setSaving\\(true\\)/, "L'ajout d'une équivalence doit empêcher les doubles soumissions.");
+assert.match(adminEquivalentsPage, /setSaving\(true\)/, "L'ajout d'une équivalence doit empêcher les doubles soumissions.");
 assert.match(adminEquivalentsPage, /deletingId/, "La suppression d'une équivalence doit avoir un état dédié.");
 assert.match(adminEquivalentsPage, /Correspondance vérifiée/, "L'administrateur doit pouvoir distinguer les équivalences vérifiées.");
 
