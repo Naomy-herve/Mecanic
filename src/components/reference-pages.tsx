@@ -51,6 +51,9 @@ export function ReferencePage({slug}:{slug:string}) {
   const [year,setYear]=useState("");
   const [engine,setEngine]=useState("");
   const [selected,setSelected]=useState<Product|null>(null);
+  const [equivalents,setEquivalents]=useState<Equivalent[]>([]);
+  const [equivalentsLoading,setEquivalentsLoading]=useState(false);
+  const [equivalentsError,setEquivalentsError]=useState("");
   const [notice,setNotice]=useState("");
 
   useEffect(()=>{
@@ -69,6 +72,19 @@ export function ReferencePage({slug}:{slug:string}) {
     })();
     return ()=>{active=false;};
   },[]);
+
+  useEffect(()=>{
+    let active=true;
+    if(!selected){setEquivalents([]);setEquivalentsError("");return;}
+    setEquivalentsLoading(true);
+    setEquivalentsError("");
+    fetch("/api/products/"+encodeURIComponent(selected.slug)+"/equivalents",{cache:"no-store"})
+      .then(async response=>{const data=await response.json();if(!response.ok)throw new Error(data.error||"Équivalences indisponibles.");return data;})
+      .then(data=>{if(active)setEquivalents(Array.isArray(data.equivalents)?data.equivalents:[]);})
+      .catch(error=>{if(active)setEquivalentsError(error instanceof Error?error.message:"Équivalences indisponibles.");})
+      .finally(()=>{if(active)setEquivalentsLoading(false);});
+    return ()=>{active=false;};
+  },[selected]);
 
   const categories=useMemo(()=>["Toutes",...Array.from(new Set(products.map(p=>p.category_name).filter((x):x is string=>Boolean(x)))).sort((a,b)=>a.localeCompare(b,"fr"))],[products]);
   const filtered=useMemo(()=>products.filter(p=>
@@ -137,7 +153,13 @@ export function ReferencePage({slug}:{slug:string}) {
       </section> :
       page.kind==="compare" ? <section className="ref-panel"><div className="ref-compare-grid">
         <div><span className="ref-eyebrow">RÉFÉRENCE D’ORIGINE</span><h2>Pièce sélectionnée</h2><div className="ref-compare-art">◈</div><b>{selected?.sku||"Choisissez une pièce ci-dessous"}</b><p>{selected?.name||"Aucune référence sélectionnée."}</p></div>
-        <div><span className="ref-eyebrow">ALTERNATIVES VÉRIFIÉES</span><h2>Équivalences enregistrées</h2><div className="ref-compare-art alt">◇</div><b>Vérification nécessaire</b><p>Les alternatives ne sont pas supposées. Elles doivent être validées dans l’administration.</p></div>
+        <div><span className="ref-eyebrow">ÉQUIVALENCES VALIDÉES</span><h2>Alternatives enregistrées</h2>
+          {!selected&&<p>Sélectionnez une pièce pour consulter ses équivalences validées.</p>}
+          {equivalentsLoading&&<p role="status">Recherche des équivalences…</p>}
+          {equivalentsError&&<p role="alert">{equivalentsError}</p>}
+          {selected&&!equivalentsLoading&&!equivalentsError&&!equivalents.length&&<p>Aucune équivalence validée n’est enregistrée pour cette référence.</p>}
+          {equivalents.map(item=><article className="ref-product" key={item.id}><div className="ref-product-body"><small>RÉF. {item.sku}</small><h3>{item.name}</h3><p>{item.notes||"Équivalence validée par l’administration."}</p><p>{currency(item)} · {item.stock_quantity>0?"Stock indiqué : "+item.stock_quantity:"Disponibilité à confirmer"}</p><Link href={"/produit/"+item.slug}>Voir la pièce ↗</Link></div></article>)}
+        </div>
       </div>
       {productCards}<ContactButton label="Faire vérifier la compatibilité" reference={selected?.sku||""}/></section> :
       page.style==="admin" ? <>
