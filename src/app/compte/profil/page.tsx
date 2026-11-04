@@ -14,7 +14,7 @@ export default async function Profile() {
         <h1 className="page-title">Bonjour, {user.fullName}</h1>
         <p className="muted">{user.email}</p>
         <div className="admin-grid">
-          <div className="stat-card"><small>Profil</small><strong>Client</strong></div>
+          <div className="stat-card"><small>Profil</small><strong>{user.role === "admin" ? "Administrateur" : "Client"}</strong></div>
           <div className="stat-card"><small>Accès</small><strong>{user.role === "admin" ? "Administrateur" : "Client"}</strong></div>
         </div>
         <h2>Mes commandes</h2>
