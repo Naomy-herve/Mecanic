@@ -47,10 +47,11 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   const where = `p.is_active = true
     AND ($1 = '' OR p.name ILIKE '%' || $1 || '%' OR p.sku ILIKE '%' || $1 || '%' OR p.description ILIKE '%' || $1 || '%')
     AND ($2 = '' OR c.slug = $2)
-    AND ($3 = '' OR EXISTS (
+    AND (($3 = '' AND $4::int IS NULL AND $5 = '') OR EXISTS (
       SELECT 1 FROM product_compatibility pc
       JOIN vehicles v ON v.id = pc.vehicle_id
-      WHERE pc.product_id = p.id AND lower(v.model) = lower($3)
+      WHERE pc.product_id = p.id
+      AND ($3 = '' OR lower(v.model) = lower($3))
       AND ($4::int IS NULL OR ((v.year_from IS NULL OR v.year_from <= $4) AND (v.year_to IS NULL OR v.year_to >= $4)))
       AND ($5 = '' OR coalesce(v.engine, '') ILIKE '%' || $5 || '%')
     ))
