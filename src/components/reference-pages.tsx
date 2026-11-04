@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const pages = [
   { slug:"accueil-premium", n:"01", title:"Accueil premium", eyebrow:"KIA PIÈCE · LA PERFORMANCE AU QUOTIDIEN", desc:"La bonne pièce, le bon conseil, au bon moment.", style:"dark", kind:"home" },
@@ -19,43 +19,134 @@ const pages = [
   { slug:"resultats-filtres", n:"13", title:"Résultats & filtres", eyebrow:"RÉSULTATS DU CATALOGUE", desc:"Affinez les résultats par catégorie, état et disponibilité.", style:"light", kind:"results" },
 ] as const;
 
-const sample = [
-  {name:"Filtre à huile Kia", ref:"26300-35505", category:"Filtration", price:"Sur demande", status:"Disponible"},
-  {name:"Plaquettes de frein avant", ref:"58101-D4A00", category:"Freinage", price:"Sur demande", status:"À confirmer"},
-  {name:"Filtre à air moteur", ref:"28113-L1000", category:"Filtration", price:"Sur demande", status:"Disponible"},
-  {name:"Amortisseur avant", ref:"54651-G2000", category:"Suspension", price:"Sur demande", status:"À confirmer"},
-  {name:"Kit courroie accessoire", ref:"25212-2B140", category:"Moteur", price:"Sur demande", status:"Disponible"},
-  {name:"Rétroviseur extérieur", ref:"87610-D9000", category:"Carrosserie", price:"Sur demande", status:"Disponible"},
-];
+type Product = {
+  id: string;
+  sku: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  price: string | number;
+  currency: string;
+  stock_quantity: number;
+  condition?: string | null;
+  image_url?: string | null;
+  category_name: string | null;
+};
 
-function ContactButton({label="Demander cette pièce"}:{label?:string}) {
-  const msg=encodeURIComponent("Bonjour KIA PIÈCE, je souhaite obtenir des informations sur une pièce. Merci.");
-  return <a className="ref-cta" href={"https://wa.me/261385623528?text="+msg} target="_blank" rel="noreferrer">{label} ↗</a>;
+function ContactButton({label="Demander cette pièce", reference=""}:{label?:string;reference?:string}) {
+  const message = reference
+    ? "Bonjour KIA PIÈCE, je souhaite des informations sur la référence " + reference + ". Merci de confirmer le prix et la disponibilité."
+    : "Bonjour KIA PIÈCE, je souhaite obtenir des informations sur une pièce. Merci.";
+  return <a className="ref-cta" href={"https://wa.me/261385623528?text="+encodeURIComponent(message)} target="_blank" rel="noopener noreferrer">{label} ↗</a>;
 }
 
 export function ReferencePage({slug}:{slug:string}) {
   const page=pages.find(p=>p.slug===slug);
+  const [products,setProducts]=useState<Product[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [loadError,setLoadError]=useState("");
   const [search,setSearch]=useState("");
   const [category,setCategory]=useState("Toutes");
   const [vehicle,setVehicle]=useState("Sportage");
   const [year,setYear]=useState("2020");
-  const [selected,setSelected]=useState("26300-35505");
+  const [engine,setEngine]=useState("");
+  const [selected,setSelected]=useState<Product|null>(null);
   const [notice,setNotice]=useState("");
-  const filtered=useMemo(()=>sample.filter(p=>(category==="Toutes"||p.category===category)&&((p.name+" "+p.ref).toLowerCase().includes(search.toLowerCase()))),[search,category]);
+
+  useEffect(()=>{
+    let active=true;
+    (async()=>{
+      try {
+        const response=await fetch("/api/products",{cache:"no-store"});
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.error||"Catalogue indisponible.");
+        if(active) setProducts(Array.isArray(data.products)?data.products:[]);
+      } catch(error) {
+        if(active) setLoadError(error instanceof Error?error.message:"Catalogue indisponible.");
+      } finally {
+        if(active) setLoading(false);
+      }
+    })();
+    return ()=>{active=false;};
+  },[]);
+
+  const categories=useMemo(()=>["Toutes",...Array.from(new Set(products.map(p=>p.category_name).filter((x):x is string=>Boolean(x))).sort((a,b)=>a.localeCompare(b,"fr"))],[products]);
+  const filtered=useMemo(()=>products.filter(p=>
+    (category==="Toutes"||p.category_name===category) &&
+    (p.name+" "+p.sku+" "+(p.description||"")).toLocaleLowerCase("fr").includes(search.trim().toLocaleLowerCase("fr"))
+  ),[products,search,category]);
+  const currency=(p:Product)=>Number(p.price).toLocaleString("fr-FR")+" "+p.currency;
+  const productCards=<>
+    <div className="ref-toolbar">
+      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nom, référence ou mot-clé…" aria-label="Rechercher une pièce"/>
+      <select value={category} onChange={e=>setCategory(e.target.value)} aria-label="Filtrer par catégorie">{categories.map(c=><option key={c}>{c}</option>)}</select>
+    </div>
+    {loading&&<p className="ref-notice" role="status">Chargement du catalogue réel…</p>}
+    {loadError&&<p className="ref-notice" role="alert">{loadError}</p>}
+    {!loading&&!loadError&&!filtered.length&&<div className="ref-notice">Aucune pièce enregistrée ne correspond à cette recherche. Vous pouvez nous demander une référence.</div>}
+    <div className="ref-products">
+      {filtered.map((p,i)=><article className="ref-product" key={p.id}>
+        <div className="ref-product-art">
+          {p.image_url?<img src={p.image_url} alt={p.name} loading="lazy" style={{width:"100%",height:"100%",objectFit:"contain"}}/>:<span>{["⚙","◉","▤","◇","⌁","ϟ"][i%6]}</span>}
+          <small>{p.category_name||"Pièce Kia"}</small>
+        </div>
+        <div className="ref-product-body">
+          <small>RÉF. {p.sku}</small>
+          <h3>{p.name}</h3>
+          <p>{p.stock_quantity>0?"Stock indiqué : "+p.stock_quantity:"Disponibilité à confirmer"} · {currency(p)}</p>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+            <Link href={"/produit/"+p.slug}>Détails ↗</Link>
+            <button type="button" onClick={()=>{setSelected(p);setNotice("Référence "+p.sku+" sélectionnée.");}}>Sélectionner</button>
+          </div>
+        </div>
+      </article>)}
+    </div>
+    {notice&&<p className="ref-notice" role="status">{notice}</p>}
+  </>;
+
+  const adminTable=<div className="ref-table-wrap">
+    <table><thead><tr><th>Référence</th><th>Pièce</th><th>Catégorie</th><th>Stock</th><th>Prix</th><th>Action</th></tr></thead>
+      <tbody>{products.map(p=><tr key={p.id}><td>{p.sku}</td><td>{p.name}</td><td>{p.category_name||"—"}</td><td>{p.stock_quantity}</td><td>{currency(p)}</td><td><Link href="/admin/produits">Gérer</Link></td></tr>)}</tbody>
+    </table>
+    {!loading&&!products.length&&<p className="ref-notice">Aucune pièce réelle enregistrée. Ajoutez vos références depuis l’administration.</p>}
+  </div>;
+
   if(!page) return <main className="ref-page"><div className="ref-container"><h1>Page introuvable</h1><Link href="/reference/accueil-premium">Retour aux pages de démonstration</Link></div></main>;
-  const categories=["Toutes","Moteur","Freinage","Filtration","Carrosserie","Suspension"];
-  const catalog=<><div className="ref-toolbar"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nom ou référence de pièce…"/><select value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(c=><option key={c}>{c}</option>)}</select></div><div className="ref-products">{filtered.map((p,i)=><article className="ref-product" key={p.ref}><div className="ref-product-art"><span>{["⚙","◉","▤","◇","⌁","ϟ"][i%6]}</span><small>{p.category}</small></div><div className="ref-product-body"><small>RÉF. {p.ref}</small><h3>{p.name}</h3><p>{p.status} · Prix à confirmer</p><button onClick={()=>{setSelected(p.ref);setNotice("Référence "+p.ref+" sélectionnée. Vous pouvez contacter KIA PIÈCE.");}}>Sélectionner</button></div></article>)}</div>{notice&&<p className="ref-notice" role="status">{notice}</p>}</>;
-  const adminTable=<div className="ref-table-wrap"><table><thead><tr><th>Référence</th><th>Pièce</th><th>Catégorie</th><th>Statut</th><th>Action</th></tr></thead><tbody>{sample.map(p=><tr key={p.ref}><td>{p.ref}</td><td>{p.name}</td><td>{p.category}</td><td><span className="ref-pill">{p.status}</span></td><td><button onClick={()=>setNotice("Élément "+p.ref+" prêt à être géré depuis l’administration connectée.")}>Gérer</button></td></tr>)}</tbody></table></div>;
+
   return <main className={"ref-page ref-"+page.style}>
     <div className="ref-container">
       <div className="ref-breadcrumb"><Link href="/">KIA PIÈCE</Link><span>/</span><span>Pages de référence</span><span>/</span><b>{page.title}</b></div>
       <div className="ref-heading"><div><div className="ref-eyebrow">{page.eyebrow}</div><h1>{page.title}</h1><p>{page.desc}</p></div><div className="ref-page-number">{page.n}<small>/ 13</small></div></div>
-      {page.kind==="home"||page.kind==="premium" ? <><section className="ref-hero-art"><div><span className="ref-eyebrow">PIÈCES AUTOMOBILES KIA</span><h2>La précision<br/><em>dans chaque pièce.</em></h2><p>Identifiez votre véhicule, explorez les familles de pièces et contactez notre équipe pour confirmer la disponibilité.</p><div className="ref-actions"><Link className="ref-cta" href="/reference/catalogue-pieces">Explorer le catalogue ↗</Link><ContactButton label="Contacter l’équipe"/></div></div><div className="ref-car-shape"><div className="ref-car-line"/><span>KIA</span></div></section><div className="ref-categories">{categories.slice(1).map((c,i)=><Link key={c} href="/reference/catalogue-pieces"><b>0{i+1}</b><span>{c}</span><i>↗</i></Link>)}</div></> :
-      page.kind==="vehicle" ? <section className="ref-panel ref-vehicle-panel"><div className="ref-eyebrow">TROUVER LES PIÈCES ADAPTÉES</div><h2>Quel est votre véhicule ?</h2><div className="ref-form-grid"><label>Modèle<select value={vehicle} onChange={e=>setVehicle(e.target.value)}>{["Picanto","Rio","Ceed","Cerato","Sportage","Sorento","Seltos"].map(x=><option key={x}>{x}</option>)}</select></label><label>Année<select value={year} onChange={e=>setYear(e.target.value)}>{Array.from({length:20},(_,i)=>String(2026-i)).map(x=><option key={x}>{x}</option>)}</select></label><label>Motorisation<input placeholder="Ex. 1.6 CRDi"/></label><label>Immatriculation (facultatif)<input placeholder="Votre immatriculation"/></label></div><button className="ref-cta" onClick={()=>setNotice("Recherche préparée pour Kia "+vehicle+" ("+year+"). Contactez-nous pour confirmer les pièces compatibles.")}>Voir les pièces compatibles ↗</button>{notice&&<p className="ref-notice">{notice}</p>}</section> :
-      page.kind==="reference" ? <section className="ref-panel ref-reference-panel"><div className="ref-search-icon">⌕</div><h2>Rechercher une référence constructeur</h2><p>Entrez le numéro figurant sur votre ancienne pièce ou votre documentation.</p><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ex. 26300-35505"/><button className="ref-cta" onClick={()=>setNotice(search.trim()?"Votre demande pour « "+search+" » est prête. Transmettez-la à notre équipe.":"Saisissez une référence pour continuer.")}>Rechercher la référence</button>{notice&&<p className="ref-notice">{notice}</p>}<ContactButton label="Envoyer la demande sur WhatsApp"/></section> :
-      page.kind==="compare" ? <section className="ref-panel"><div className="ref-compare-grid"><div><span className="ref-eyebrow">RÉFÉRENCE D’ORIGINE</span><h2>Pièce constructeur</h2><div className="ref-compare-art">◈</div><b>26300-35505</b><p>Référence d’origine à confirmer selon le véhicule.</p></div><div><span className="ref-eyebrow">ALTERNATIVE</span><h2>Équivalence proposée</h2><div className="ref-compare-art alt">◇</div><b>Équivalence à vérifier</b><p>La compatibilité doit être validée avant toute commande.</p></div></div><label className="ref-check"><input type="checkbox" onChange={e=>setNotice(e.target.checked?"Comparaison enregistrée dans cette session.":"Comparaison décochée.")}/> J’ai compris que l’équivalence doit être confirmée</label>{notice&&<p className="ref-notice">{notice}</p>}<ContactButton label="Faire vérifier la compatibilité"/></section> :
-      page.style==="admin" ? <><div className="ref-metrics">{["Demandes reçues","Références affichées","Catégories","À confirmer"].map((x,i)=><div key={x}><small>{x}</small><strong>{["—","—","6","—"][i]}</strong><span>{["Suivi des contacts","Catalogue actuel","Familles de pièces","Disponibilité"][i]}</span></div>)}</div><section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">GESTION</div><h2>{page.kind==="inventory"?"Inventaire des pièces":page.kind==="reports"?"Rapports et activité":page.kind==="stats"?"Indicateurs de la boutique":"Dernières références"}</h2></div><Link href="/admin">Ouvrir l’administration complète ↗</Link></div>{adminTable}{notice&&<p className="ref-notice">{notice}</p>}</section></> :
-      <><section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">{page.kind==="responsive"?"MOBILE · TABLETTE · DESKTOP":"SÉLECTION DE PIÈCES"}</div><h2>{page.kind==="results"?"Affinez votre sélection":"Pièces disponibles dans le catalogue"}</h2></div><span className="ref-live">● Recherche interactive</span></div>{catalog}<div className="ref-selected">Référence sélectionnée : <b>{selected}</b> <ContactButton label="Demander le prix et la disponibilité"/></div></section></>}
+
+      {page.kind==="home"||page.kind==="premium" ? <>
+        <section className="ref-hero-art"><div><span className="ref-eyebrow">PIÈCES AUTOMOBILES KIA</span><h2>La précision<br/><em>dans chaque pièce.</em></h2><p>Identifiez votre véhicule, explorez les familles de pièces et contactez notre équipe pour confirmer la disponibilité.</p><div className="ref-actions"><Link className="ref-cta" href="/reference/catalogue-pieces">Explorer le catalogue ↗</Link><ContactButton label="Contacter l’équipe"/></div></div><div className="ref-car-shape"><div className="ref-car-line"/><span>KIA</span></div></section>
+        <div className="ref-categories">{categories.slice(1).map((c,i)=><Link key={c} href="/reference/catalogue-pieces"><b>{String(i+1).padStart(2,"0")}</b><span>{c}</span><i>↗</i></Link>)}</div>
+        <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">SÉLECTION DU CATALOGUE</div><h2>Quelques références disponibles</h2></div><Link href="/reference/catalogue-pieces">Voir le catalogue complet ↗</Link></div>{productCards}</section>
+      </> :
+      page.kind==="vehicle" ? <section className="ref-panel ref-vehicle-panel"><div className="ref-eyebrow">TROUVER LES PIÈCES ADAPTÉES</div><h2>Quel est votre véhicule ?</h2><div className="ref-form-grid">
+        <label>Modèle<select value={vehicle} onChange={e=>setVehicle(e.target.value)}>{["Picanto","Rio","Ceed","Cerato","Sportage","Sorento","Seltos"].map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>Année<select value={year} onChange={e=>setYear(e.target.value)}>{Array.from({length:27},(_,i)=>String(2026-i)).map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>Motorisation<input value={engine} onChange={e=>setEngine(e.target.value)} placeholder="Motorisation (facultatif)"/></label>
+      </div>
+      <button className="ref-cta" onClick={()=>setNotice("Recherche préparée pour Kia "+vehicle+" ("+year+")"+(engine?" · "+engine:"")+". La compatibilité doit être confirmée à partir des données véhicule enregistrées.")}>Préparer ma recherche ↗</button>
+      <p className="ref-notice">La sélection du véhicule ne certifie pas à elle seule la compatibilité. Demandez confirmation avant achat.</p>
+      {notice&&<p className="ref-notice" role="status">{notice}</p>}<ContactButton label="Confirmer la compatibilité"/></section> :
+      page.kind==="reference" ? <section className="ref-panel ref-reference-panel"><div className="ref-search-icon">⌕</div><h2>Rechercher une référence constructeur</h2><p>Entrez le numéro figurant sur votre ancienne pièce ou votre documentation.</p>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Saisir une référence constructeur"/>
+        {productCards}
+      </section> :
+      page.kind==="compare" ? <section className="ref-panel"><div className="ref-compare-grid">
+        <div><span className="ref-eyebrow">RÉFÉRENCE D’ORIGINE</span><h2>Pièce sélectionnée</h2><div className="ref-compare-art">◈</div><b>{selected?.sku||"Choisissez une pièce ci-dessous"}</b><p>{selected?.name||"Aucune référence sélectionnée."}</p></div>
+        <div><span className="ref-eyebrow">ALTERNATIVES VÉRIFIÉES</span><h2>Équivalences enregistrées</h2><div className="ref-compare-art alt">◇</div><b>Vérification nécessaire</b><p>Les alternatives ne sont pas supposées. Elles doivent être validées dans l’administration.</p></div>
+      </div>
+      {productCards}<ContactButton label="Faire vérifier la compatibilité" reference={selected?.sku||""}/></section> :
+      page.style==="admin" ? <>
+        <div className="ref-metrics">{["Pièces enregistrées","Références affichées","Catégories","Stock faible"].map((x,i)=><div key={x}><small>{x}</small><strong>{i===0||i===1?products.length:i===2?categories.length-1:"À vérifier"}</strong><span>{["Catalogue réel","Données actives","Familles renseignées","Seuil administrateur"][i]}</span></div>)}</div>
+        <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">GESTION</div><h2>{page.kind==="inventory"?"Inventaire des pièces":page.kind==="reports"?"Rapports et activité":page.kind==="stats"?"Indicateurs de la boutique":"Dernières références"}</h2></div><Link href="/admin">Ouvrir l’administration complète ↗</Link></div>{adminTable}</section>
+      </> :
+      <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">{page.kind==="responsive"?"MOBILE · TABLETTE · DESKTOP":"SÉLECTION DE PIÈCES"}</div><h2>{page.kind==="results"?"Affinez votre sélection":"Pièces disponibles dans le catalogue"}</h2></div><span className="ref-live">● Catalogue connecté</span></div>{productCards}
+        <div className="ref-selected">Référence sélectionnée : <b>{selected?.sku||"Aucune"}</b> {selected&&<ContactButton label="Demander le prix et la disponibilité" reference={selected.sku}/>}</div>
+      </section>}
       <nav className="ref-page-nav" aria-label="Navigation des 13 pages">{pages.map(p=><Link className={p.slug===slug?"active":""} href={"/reference/"+p.slug} key={p.slug}><b>{p.n}</b><span>{p.title}</span></Link>)}</nav>
     </div>
   </main>;
