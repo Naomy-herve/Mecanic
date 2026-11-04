@@ -46,6 +46,9 @@ assert.match(cartStorage, /Number\.isFinite\(item\.price\)/, "Le panier doit rej
 assert.match(cartStorage, /item\.quantity <= 20/, "Le panier doit limiter chaque référence à 20 unités.");
 assert.match(cartStorage, /result\.length >= 30/, "Le panier doit limiter le nombre de références.");
 assert.match(addToCart, /readCart\(\)/, "L’ajout au panier doit utiliser le stockage validé.");
+assert.match(productPage, /<AddToCart product=/, "La fiche produit doit permettre un ajout au panier.");
+assert.match(catalogue, /<AddToCart product=/, "Les cartes du catalogue doivent permettre un ajout au panier.");
+assert.match(productPage, /disabled=\{p\.stock_quantity<=0\}/, "Une pièce sans stock ne doit pas être ajoutée directement au panier.");
 assert.match(cartPage, /aria-label=\{"Augmenter la quantité/, "Les contrôles de quantité doivent avoir des libellés accessibles.");
 assert.match(adminMetrics, /requireAdmin\(\)/, "Les indicateurs de gestion doivent être protégés.");
 assert.match(adminMetrics, /low_stock_products/, "Le stock faible doit provenir de la base.");
