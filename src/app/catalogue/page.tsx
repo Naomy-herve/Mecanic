@@ -116,7 +116,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
             <label><span>Prix minimum</span><input name="min" type="number" min="0" step="0.01" defaultValue={min ?? ""} placeholder="0" /></label>
             <label><span>Prix maximum</span><input name="max" type="number" min="0" step="0.01" defaultValue={max ?? ""} placeholder="Sans limite" /></label>
             <label><span>Devise du prix</span><select name="currency" defaultValue={currency}><option value="">Toutes les devises</option><option value="MGA">MGA · Ariary</option><option value="EUR">EUR · Euro</option><option value="USD">USD · Dollar</option></select></label>
-            <label><span>Trier par</span><select name="sort" defaultValue={sort}><option value="recent">Plus récents</option><option value="price_asc">Prix croissant</option><option value="price_desc">Prix décroissant</option><option value="name">Nom A à Z</option><option value="stock">Disponibilité</option></select></label>
+            <label><span>Trier par</span><select name="sort" defaultValue={sort}><option value="recent">Plus récents</option><option value="price_asc">Prix croissant · par devise</option><option value="price_desc">Prix décroissant · par devise</option><option value="name">Nom A à Z</option><option value="stock">Disponibilité</option></select></label>
             <label className="catalogue-check"><input type="checkbox" name="availability" value="available" defaultChecked={!!availability} /> En stock uniquement</label>
             <input type="hidden" name="view" value={view} />
             <button className="btn btn-primary">Appliquer les filtres</button>
