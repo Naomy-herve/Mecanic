@@ -27,6 +27,9 @@ const adminVehiclesApi = read("src/app/api/admin/vehicles/route.ts");
 const adminCategories = read("src/app/api/admin/categories/route.ts");
 const adminCategoriesPage = read("src/app/admin/categories/page.tsx");
 const adminEquivalentsPage = read("src/app/admin/equivalences/manager.tsx");
+const bootstrapAdmin = read("src/app/api/auth/bootstrap-admin/route.ts");
+const bootstrapAdminPage = read("src/app/admin/initialiser/page.tsx");
+
 
 
 assert.match(products, /p\.is_active\s*=\s*true/, "Le catalogue public ne doit exposer que les pièces actives.");
