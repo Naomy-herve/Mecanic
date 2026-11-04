@@ -6,14 +6,14 @@ import { createSession } from "@/lib/auth";
 
 const schema = z.object({
   fullName: z.string().trim().min(2).max(100),
-  email: z.email(),
+  email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
   password: z.string().min(10).max(100),
 });
 
 export async function POST(req: Request) {
   try {
     const data = schema.parse(await req.json());
-    const email = data.email.trim().toLowerCase();
+    const email = data.email;
     const configuredAdmin = process.env.KIA_ADMIN_EMAIL?.trim().toLowerCase();
 
     // The configured administrator address must never be claimable through
