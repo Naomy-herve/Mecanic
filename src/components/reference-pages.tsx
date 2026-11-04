@@ -47,6 +47,8 @@ export function ReferencePage({slug}:{slug:string}) {
   const [loadError,setLoadError]=useState("");
   const [search,setSearch]=useState("");
   const [category,setCategory]=useState("Toutes");
+  const [vehicles,setVehicles]=useState<Vehicle[]>([]);
+  const [vehiclesLoading,setVehiclesLoading]=useState(false);
   const [vehicle,setVehicle]=useState("");
   const [year,setYear]=useState("");
   const [engine,setEngine]=useState("");
@@ -85,6 +87,18 @@ export function ReferencePage({slug}:{slug:string}) {
       .finally(()=>{if(active)setEquivalentsLoading(false);});
     return ()=>{active=false;};
   },[selected]);
+
+  useEffect(()=>{
+    if(page?.kind!=="vehicle") return;
+    let active=true;
+    setVehiclesLoading(true);
+    fetch("/api/vehicles",{cache:"no-store"})
+      .then(async response=>{const data=await response.json();if(!response.ok)throw new Error(data.error||"Véhicules indisponibles.");return data;})
+      .then(data=>{if(active)setVehicles(Array.isArray(data.vehicles)?data.vehicles:[]);})
+      .catch(()=>{if(active)setVehicles([]);})
+      .finally(()=>{if(active)setVehiclesLoading(false);});
+    return ()=>{active=false;};
+  },[page?.kind]);
 
   const categories=useMemo(()=>["Toutes",...Array.from(new Set(products.map(p=>p.category_name).filter((x):x is string=>Boolean(x)))).sort((a,b)=>a.localeCompare(b,"fr"))],[products]);
   const filtered=useMemo(()=>products.filter(p=>
@@ -140,7 +154,7 @@ export function ReferencePage({slug}:{slug:string}) {
         <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">SÉLECTION DU CATALOGUE</div><h2>Quelques références disponibles</h2></div><Link href="/reference/catalogue-pieces">Voir le catalogue complet ↗</Link></div>{productCards}</section>
       </> :
       page.kind==="vehicle" ? <section className="ref-panel ref-vehicle-panel"><div className="ref-eyebrow">TROUVER LES PIÈCES ADAPTÉES</div><h2>Quel est votre véhicule ?</h2><div className="ref-form-grid">
-        <label>Modèle Kia<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder="Ex. Sportage" required/></label>
+        <label>Modèle Kia{vehicles.length>0?<select value={vehicle} onChange={e=>{const v=vehicles.find(x=>x.id===e.target.value);setVehicle(v?.model||"");setYear(v?.year_from?String(v.year_from):"");setEngine(v?.engine||"");}}><option value="">Choisir un véhicule enregistré</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.make} {v.model}{v.year_from?" · "+v.year_from+(v.year_to&&v.year_to!==v.year_from?"–"+v.year_to:""):""}{v.generation?" · "+v.generation:""}</option>)}</select>:<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder={vehiclesLoading?"Chargement des véhicules…":"Aucun véhicule enregistré — saisir le modèle"} required/>}</label>
         <label>Année<input type="number" min="1980" max="2035" value={year} onChange={e=>setYear(e.target.value)} placeholder="Ex. 2020"/></label>
         <label>Motorisation<input value={engine} onChange={e=>setEngine(e.target.value)} placeholder="Motorisation (facultatif)"/></label>
       </div>
