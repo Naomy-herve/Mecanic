@@ -8,6 +8,7 @@ const orders = read("src/app/api/orders/route.ts");
 const customerOrders = read("src/app/api/account/orders/route.ts");
 const adminOrders = read("src/app/api/admin/orders/route.ts");
 const adminProducts = read("src/app/api/admin/products/route.ts");
+const adminProductsPage = read("src/app/admin/produits/page.tsx");
 const register = read("src/app/api/auth/register/route.ts");
 const login = read("src/app/api/auth/login/route.ts");
 const catalogue = read("src/app/catalogue/page.tsx");
