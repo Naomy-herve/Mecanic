@@ -49,6 +49,10 @@ type AdminMetrics = {
   vehicles: number;
   categories: number;
   low_stock_products: number;
+  total_orders: number;
+  pending_orders: number;
+  total_inquiries: number;
+  new_inquiries: number;
 };
 
 function ContactButton({label="Demander cette pièce", reference=""}:{label?:string;reference?:string}) {
@@ -215,7 +219,11 @@ export function ReferencePage({slug}:{slug:string}) {
           ["Pièces actives",adminMetrics?.active_products],
           ["Véhicules",adminMetrics?.vehicles],
           ["Catégories",adminMetrics?.categories],
-          ["Pièces en stock faible",adminMetrics?.low_stock_products]
+          ["Pièces en stock faible",adminMetrics?.low_stock_products],
+          ["Commandes",adminMetrics?.total_orders],
+          ["Commandes en attente",adminMetrics?.pending_orders],
+          ["Demandes clients",adminMetrics?.total_inquiries],
+          ["Nouvelles demandes",adminMetrics?.new_inquiries]
         ].map(([label,value])=><div key={String(label)}><small>{label}</small><strong>{metricsLoading?"…":metricsError?"—":value??"—"}</strong><span>{metricsError?"Indicateur indisponible":"Données réelles de la base"}</span></div>)}</div>
         {metricsError&&<p className="ref-notice" role="alert">{metricsError}</p>}
         <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">GESTION</div><h2>{page.kind==="inventory"?"Inventaire des pièces":page.kind==="reports"?"Rapports et activité":page.kind==="stats"?"Indicateurs de la boutique":"Dernières références"}</h2></div><Link href="/admin">Ouvrir l’administration complète ↗</Link></div>{adminTable}</section>
