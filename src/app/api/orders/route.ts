@@ -1,3 +1,111 @@
-import {NextResponse} from "next/server";import {z} from "zod";import {randomUUID} from "node:crypto";import {db,query} from "@/lib/db";import {getSession} from "@/lib/auth";
-const schema=z.object({items:z.array(z.object({productId:z.uuid(),quantity:z.number().int().min(1).max(20)})).min(1).max(30),customerName:z.string().trim().min(2).max(100),customerEmail:z.email(),customerPhone:z.string().trim().min(5).max(40),shippingAddress:z.object({line1:z.string().trim().min(4).max(180),city:z.string().trim().min(2).max(100),postalCode:z.string().trim().max(20),country:z.string().trim().min(2).max(80)}),notes:z.string().max(1000).optional()});
-export async function POST(req:Request){let client;try{const d=schema.parse(await req.json());const user=await getSession();const quantities=new Map<string,number>();for(const item of d.items){const total=(quantities.get(item.productId)||0)+item.quantity;if(total>20)throw new Error("Quantité maximale dépassée pour une même pièce.");quantities.set(item.productId,total);}const normalizedItems=[...quantities.entries()].map(([productId,quantity])=>({productId,quantity}));const customerEmail=user?.email||d.customerEmail.toLowerCase();const customerName=user?.fullName||d.customerName;client=await db.connect();await client.query("BEGIN");const ids=normalizedItems.map(x=>x.productId);const locked=await client.query("SELECT id,sku,name,price,currency,stock_quantity FROM products WHERE id=ANY($1::uuid[]) AND is_active=true FOR UPDATE",[ids]);if(locked.rows.length!==ids.length)throw new Error("Une pièce du panier n'est plus disponible.");const byId=new Map(locked.rows.map((x:any)=>[x.id,x]));let subtotal=0;const rows=normalizedItems.map(x=>{const p=byId.get(x.productId);if(!p||p.stock_quantity<x.quantity)throw new Error("Stock insuffisant pour "+(p?.name||"une pièce")+".");const unit=Number(p.price);subtotal+=unit*x.quantity;return{...x,p,unit,line:unit*x.quantity};});const currency=rows[0].p.currency;if(rows.some(x=>x.p.currency!==currency))throw new Error("Le panier contient plusieurs devises.");for(const x of rows){const upd=await client.query("UPDATE products SET stock_quantity=stock_quantity-$1,updated_at=now() WHERE id=$2 AND stock_quantity >= $1",[x.quantity,x.productId]);if(!upd.rowCount)throw new Error("Stock modifié. Veuillez actualiser votre panier.");}const orderNumber="KP-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+randomUUID().slice(0,6).toUpperCase();const total=subtotal;const ins=await client.query("INSERT INTO orders(order_number,user_id,customer_name,customer_email,customer_phone,shipping_address,subtotal,shipping_fee,total,currency,notes) VALUES($1,$2,$3,$4,$5,$6,$7,0,$7,$8,$9) RETURNING id,order_number,total,currency",[orderNumber,user?.id||null,customerName,customerEmail,d.customerPhone,JSON.stringify(d.shippingAddress),subtotal,currency,d.notes||null]);for(const x of rows)await client.query("INSERT INTO order_items(order_id,product_id,sku,product_name,quantity,unit_price,line_total) VALUES($1,$2,$3,$4,$5,$6,$7)",[ins.rows[0].id,x.productId,x.p.sku,x.p.name,x.quantity,x.unit,x.line]);await client.query("COMMIT");return NextResponse.json({order:ins.rows[0]},{status:201});}catch(e){if(client)await client.query("ROLLBACK").catch(()=>{});if(e instanceof z.ZodError)return NextResponse.json({error:"Informations de commande incomplètes."},{status:400});return NextResponse.json({error:e instanceof Error?e.message:"Commande impossible."},{status:409});}finally{client?.release();}}
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { randomUUID } from "node:crypto";
+import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+
+const schema = z.object({
+  items: z.array(z.object({
+    productId: z.uuid(),
+    quantity: z.number().int().min(1).max(20),
+  })).min(1).max(30),
+  customerName: z.string().trim().min(2).max(100),
+  customerEmail: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+  customerPhone: z.string().trim().min(5).max(40),
+  shippingAddress: z.object({
+    line1: z.string().trim().min(4).max(180),
+    city: z.string().trim().min(2).max(100),
+    postalCode: z.string().trim().max(20),
+    country: z.string().trim().min(2).max(80),
+  }),
+  notes: z.string().trim().max(1000).optional(),
+});
+
+class OrderValidationError extends Error {}
+
+export async function POST(req: Request) {
+  let client;
+  try {
+    const data = schema.parse(await req.json());
+    const user = await getSession();
+    const quantities = new Map<string, number>();
+
+    for (const item of data.items) {
+      const total = (quantities.get(item.productId) || 0) + item.quantity;
+      if (total > 20) throw new OrderValidationError("Quantité maximale dépassée pour une même pièce.");
+      quantities.set(item.productId, total);
+    }
+
+    const normalizedItems = [...quantities.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+    const customerEmail = user?.email || data.customerEmail;
+    const customerName = user?.fullName || data.customerName;
+
+    client = await db.connect();
+    await client.query("BEGIN");
+
+    const ids = normalizedItems.map(item => item.productId);
+    const locked = await client.query(
+      "SELECT id,sku,name,price,currency,stock_quantity FROM products WHERE id=ANY($1::uuid[]) AND is_active=true FOR UPDATE",
+      [ids]
+    );
+
+    if (locked.rows.length !== ids.length) {
+      throw new OrderValidationError("Une pièce du panier n'est plus disponible.");
+    }
+
+    const byId = new Map(locked.rows.map((product: any) => [product.id, product]));
+    let subtotal = 0;
+    const rows = normalizedItems.map(item => {
+      const product = byId.get(item.productId);
+      if (!product || product.stock_quantity < item.quantity) {
+        throw new OrderValidationError("Stock insuffisant pour " + (product?.name || "une pièce") + ".");
+      }
+      const unit = Number(product.price);
+      subtotal += unit * item.quantity;
+      return { ...item, product, unit, line: unit * item.quantity };
+    });
+
+    const currency = rows[0].product.currency;
+    if (rows.some(item => item.product.currency !== currency)) {
+      throw new OrderValidationError("Le panier contient plusieurs devises.");
+    }
+
+    for (const item of rows) {
+      const updated = await client.query(
+        "UPDATE products SET stock_quantity=stock_quantity-$1,updated_at=now() WHERE id=$2 AND stock_quantity >= $1",
+        [item.quantity, item.productId]
+      );
+      if (!updated.rowCount) {
+        throw new OrderValidationError("Stock modifié. Veuillez actualiser votre panier.");
+      }
+    }
+
+    const orderNumber = "KP-" + new Date().toISOString().slice(0, 10).replaceAll("-", "") + "-" + randomUUID().slice(0, 6).toUpperCase();
+    const inserted = await client.query(
+      "INSERT INTO orders(order_number,user_id,customer_name,customer_email,customer_phone,shipping_address,subtotal,shipping_fee,total,currency,notes) VALUES($1,$2,$3,$4,$5,$6,$7,0,$7,$8,$9) RETURNING id,order_number,total,currency",
+      [orderNumber, user?.id || null, customerName, customerEmail, data.customerPhone, JSON.stringify(data.shippingAddress), subtotal, currency, data.notes || null]
+    );
+
+    for (const item of rows) {
+      await client.query(
+        "INSERT INTO order_items(order_id,product_id,sku,product_name,quantity,unit_price,line_total) VALUES($1,$2,$3,$4,$5,$6,$7)",
+        [inserted.rows[0].id, item.productId, item.product.sku, item.product.name, item.quantity, item.unit, item.line]
+      );
+    }
+
+    await client.query("COMMIT");
+    return NextResponse.json({ order: inserted.rows[0] }, { status: 201 });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK").catch(() => {});
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Informations de commande incomplètes." }, { status: 400 });
+    }
+    if (error instanceof OrderValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    // Do not expose database errors, SQL details, or infrastructure information to customers.
+    return NextResponse.json({ error: "Commande impossible pour le moment. Réessayez ultérieurement." }, { status: 500 });
+  } finally {
+    client?.release();
+  }
+}
