@@ -159,7 +159,7 @@ export function ReferencePage({slug}:{slug:string}) {
         <label>Année<input type="number" min="1980" max="2035" value={year} onChange={e=>setYear(e.target.value)} placeholder="Ex. 2020"/></label>
         <label>Motorisation<input value={engine} onChange={e=>setEngine(e.target.value)} placeholder="Motorisation (facultatif)"/></label>
       </div>
-      <button className="ref-cta" onClick={()=>{if(!vehicle.trim()){setNotice("Saisissez le modèle de votre Kia.");return;}const params=new URLSearchParams({model:vehicle.trim()});if(year)params.set("year",year);window.location.href="/catalogue?"+params.toString();}}>Afficher les pièces compatibles ↗</button>
+      <button className="ref-cta" onClick={()=>{if(!vehicle.trim()){setNotice("Saisissez le modèle de votre Kia.");return;}const params=new URLSearchParams({model:vehicle.trim()});if(year)params.set("year",year);if(engine.trim())params.set("engine",engine.trim());window.location.href="/catalogue?"+params.toString();}}>Afficher les pièces compatibles ↗</button>
       <p className="ref-notice">La sélection du véhicule ne certifie pas à elle seule la compatibilité. Demandez confirmation avant achat.</p>
       {notice&&<p className="ref-notice" role="status">{notice}</p>}<ContactButton label="Confirmer la compatibilité"/></section> :
       page.kind==="reference" ? <section className="ref-panel ref-reference-panel"><div className="ref-search-icon">⌕</div><h2>Rechercher une référence constructeur</h2><p>Entrez le numéro figurant sur votre ancienne pièce ou votre documentation.</p>
