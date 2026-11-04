@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { ReferencePage } from "@/components/reference-pages";
 
 const slugs = [
@@ -24,9 +24,8 @@ export default async function ReferenceExperience({params}:{params:Promise<{page
   // These four reference experiences display operational inventory and admin
   // indicators, so they must follow the same server-side access rule as /admin.
   if(adminPages.has(page)){
-    const session=await getSession();
-    if(!session) redirect("/compte");
-    if(session.role!=="admin") redirect("/");
+    const admin=await requireAdmin();
+    if(!admin) redirect("/compte");
   }
 
   return <ReferencePage slug={page}/>;
