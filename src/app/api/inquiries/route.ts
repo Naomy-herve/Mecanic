@@ -18,7 +18,7 @@ export async function POST(req:Request){
   try{
     const body=isJson?await req.json():Object.fromEntries((await req.formData()).entries());
     const parsed=schema.safeParse(body);
-    if(!parsed.success||parsed.data.website!==undefined){
+    if(!parsed.success||Boolean(parsed.data.website?.trim())){
       return NextResponse.json({error:"Vérifiez les champs de votre demande."},{status:400});
     }
     const d=parsed.data;
