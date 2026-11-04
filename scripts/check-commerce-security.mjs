@@ -42,6 +42,8 @@ assert.match(productPage, /style:"currency",currency/, "Les prix produit doivent
 assert.match(cartPage, /style:"currency",currency/, "Les totaux du panier doivent respecter le format monétaire.");
 assert.match(adminMetrics, /requireAdmin\(\)/, "Les indicateurs de gestion doivent être protégés.");
 assert.match(adminMetrics, /low_stock_products/, "Le stock faible doit provenir de la base.");
+assert.match(adminMetrics, /total_orders[\s\S]*pending_orders[\s\S]*total_inquiries[\s\S]*new_inquiries/, "Les indicateurs administrateur doivent compter les commandes et demandes réelles.");
+assert.match(referencePages, /total_orders[\s\S]*pending_orders[\s\S]*total_inquiries[\s\S]*new_inquiries/, "Les pages de gestion doivent afficher les nouveaux indicateurs.");
 assert.match(referencePages, /fetch\("\/api\/admin\/metrics"/, "Les pages administrateur doivent charger les indicateurs réels.");
 assert.doesNotMatch(referencePages, /"À vérifier"/, "Les indicateurs fictifs ne doivent pas être affichés.");
 assert.match(inquiries, /NextResponse\.redirect\(new URL\("\/\?contact=sent#contact"/, "Le formulaire public doit revenir avec un état de confirmation.");
