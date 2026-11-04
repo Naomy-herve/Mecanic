@@ -11,7 +11,7 @@ const rowSchema=z.object({
  description:z.string().max(5000),
  categorySlug:z.string().trim().max(120),
  price:z.coerce.number().finite().nonnegative(),
- currency:z.string().trim().length(3).transform(v=>v.toUpperCase()),
+ currency:z.enum(["MGA","EUR","USD"]),
  stockQuantity:z.coerce.number().int().nonnegative(),
  condition:z.enum(["new","used","refurbished"]),
  imageUrl:z.union([z.literal(""),z.string().url()]),
