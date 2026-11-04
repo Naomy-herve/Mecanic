@@ -9,14 +9,14 @@ type Product = {
 };
 type Params = {
   q?: string; category?: string; model?: string; year?: string; engine?: string;
-  availability?: string; min?: string; max?: string; sort?: string;
+  availability?: string; min?: string; max?: string; currency?: string; sort?: string;
   view?: string; page?: string;
 };
 const PAGE_SIZE = 12;
 const ORDER_BY: Record<string, string> = {
   recent: "p.created_at DESC",
-  price_asc: "p.price ASC, p.name ASC",
-  price_desc: "p.price DESC, p.name ASC",
+  price_asc: "p.currency ASC, p.price ASC, p.name ASC",
+  price_desc: "p.currency ASC, p.price DESC, p.name ASC",
   name: "p.name ASC",
   stock: "p.stock_quantity DESC, p.name ASC",
 };
@@ -34,11 +34,14 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   const engine = (p.engine || "").trim().slice(0, 80);
   const min = p.min && Number.isFinite(Number(p.min)) && Number(p.min) >= 0 ? Number(p.min) : null;
   const max = p.max && Number.isFinite(Number(p.max)) && Number(p.max) >= 0 ? Number(p.max) : null;
+  const currency = ["MGA", "EUR", "USD"].includes(p.currency || "") ? p.currency! : "";
+  const invalidRange = min !== null && max !== null && min > max;
+  const priceFilterNeedsCurrency = (min !== null || max !== null) && !currency;
   const availability = p.availability === "available" ? "available" : "";
   const sort = ORDER_BY[p.sort || ""] ? p.sort! : "recent";
   const view = p.view === "list" ? "list" : "grid";
   const requestedPage = Math.max(1, Math.min(1000, Number.parseInt(p.page || "1", 10) || 1));
-  const values = [q, cat, model, year, engine, min, max, availability];
+  const values = [q, cat, model, year, engine, priceFilterNeedsCurrency ? null : min, priceFilterNeedsCurrency ? null : max, availability, currency];
   let products: Product[] = [];
   let cats: { name: string; slug: string }[] = [];
   let total = 0;
@@ -57,7 +60,8 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
     ))
     AND ($6::numeric IS NULL OR p.price >= $6)
     AND ($7::numeric IS NULL OR p.price <= $7)
-    AND ($8 = '' OR p.stock_quantity > 0)`;
+    AND ($8 = '' OR p.stock_quantity > 0)
+    AND ($9 = '' OR p.currency = $9)`;
 
   try {
     cats = (await query<{ name: string; slug: string }>("SELECT name, slug FROM categories ORDER BY name")).rows;
@@ -72,7 +76,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
       `SELECT p.id, p.sku, p.name, p.slug, p.description, p.price, p.currency,
         p.stock_quantity, p.condition, p.image_url, c.name AS category_name
        FROM products p LEFT JOIN categories c ON c.id = p.category_id
-       WHERE ${where} ORDER BY ${ORDER_BY[sort]} LIMIT $9 OFFSET $10`,
+       WHERE ${where} ORDER BY ${ORDER_BY[sort]} LIMIT $10 OFFSET $11`,
       [...values, PAGE_SIZE, (page - 1) * PAGE_SIZE]
     )).rows;
   } catch {
@@ -83,7 +87,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   const page = Math.min(requestedPage, totalPages);
   const queryString = (nextPage: number) => {
     const params = new URLSearchParams();
-    for (const [key, value] of Object.entries({ q, category: cat, model, year: year?.toString() || "", engine, min: min?.toString() || "", max: max?.toString() || "", availability, sort, view })) {
+    for (const [key, value] of Object.entries({ q, category: cat, model, year: year?.toString() || "", engine, min: min?.toString() || "", max: max?.toString() || "", currency, availability, sort, view })) {
       if (value) params.set(key, value);
     }
     params.set("page", String(nextPage));
@@ -111,6 +115,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
           <div className="catalogue-filter-row">
             <label><span>Prix minimum</span><input name="min" type="number" min="0" step="0.01" defaultValue={min ?? ""} placeholder="0" /></label>
             <label><span>Prix maximum</span><input name="max" type="number" min="0" step="0.01" defaultValue={max ?? ""} placeholder="Sans limite" /></label>
+            <label><span>Devise du prix</span><select name="currency" defaultValue={currency}><option value="">Toutes les devises</option><option value="MGA">MGA · Ariary</option><option value="EUR">EUR · Euro</option><option value="USD">USD · Dollar</option></select></label>
             <label><span>Trier par</span><select name="sort" defaultValue={sort}><option value="recent">Plus récents</option><option value="price_asc">Prix croissant</option><option value="price_desc">Prix décroissant</option><option value="name">Nom A à Z</option><option value="stock">Disponibilité</option></select></label>
             <label className="catalogue-check"><input type="checkbox" name="availability" value="available" defaultChecked={!!availability} /> En stock uniquement</label>
             <input type="hidden" name="view" value={view} />
@@ -123,6 +128,9 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
           <div><strong>{total} résultat{total === 1 ? "" : "s"}</strong>{model && <span className="muted"> · Kia {model}{year ? " " + year : ""}</span>}</div>
           <div className="catalogue-view-switch"><Link aria-current={view === "grid" ? "page" : undefined} href={queryString(1).replace("view=list", "view=grid")}>Grille</Link><Link aria-current={view === "list" ? "page" : undefined} href={queryString(1).replace("view=grid", "view=list")}>Liste</Link></div>
         </div>
+
+        {invalidRange && <div className="notice error" role="alert">Le prix minimum ne peut pas dépasser le prix maximum.</div>}
+        {priceFilterNeedsCurrency && <div className="notice" role="status">Choisissez une devise pour appliquer les filtres de prix. Sans devise, les prix ne sont pas comparés entre eux.</div>}
 
         {error ? (
           <div className="empty-state"><h3>Catalogue momentanément indisponible</h3><p>La connexion à la base de données n'a pas permis de charger les références.</p><Link className="btn btn-outline" href="/#contact">Contacter KIA PIÈCE</Link></div>
