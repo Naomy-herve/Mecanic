@@ -33,6 +33,9 @@ jobs:
       - name: Reference pages validation
         run: npm run check:references
 
+      - name: Commerce and access security validation
+        run: npm run check:commerce
+
       - name: TypeScript validation
         run: npm run typecheck
 
