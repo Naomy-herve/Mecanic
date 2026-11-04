@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ProductImage from "@/components/product-image";
 import { query } from "@/lib/db";
 
 type Product = {
@@ -126,7 +127,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
             <div className={view === "list" ? "product-grid product-list-view" : "product-grid"}>
               {products.map(p => (
                 <article className="product-card" key={p.id}>
-                  <div className="product-image">{p.image_url ? <img src={p.image_url} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span aria-hidden="true">⚙</span>}</div>
+                  <ProductImage className="product-image" src={p.image_url} alt={p.name}/>
                   <div className="product-info">
                     <span className="badge">{p.category_name || "Pièce Kia"} · {p.condition === "new" ? "Neuf" : p.condition === "used" ? "Occasion" : "Reconditionné"}</span>
                     <h3>{p.name}</h3>
