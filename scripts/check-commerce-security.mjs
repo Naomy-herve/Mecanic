@@ -21,6 +21,8 @@ const homePage = read("src/app/page.tsx");
 const inquiries = read("src/app/api/inquiries/route.ts");
 const siteHeader = read("src/components/site-header.tsx");
 const globalCss = read("src/app/globals.css");
+const adminVehicles = read("src/app/admin/vehicules/page.tsx");
+const adminVehiclesApi = read("src/app/api/admin/vehicles/route.ts");
 
 assert.match(products, /p\.is_active\s*=\s*true/, "Le catalogue public ne doit exposer que les pièces actives.");
 assert.match(equivalents, /e\.verified\s*=\s*true/, "Les équivalences publiques doivent être vérifiées.");
@@ -37,6 +39,12 @@ assert.match(customerOrders, /getSession\(\)/, "L'historique exige une session."
 assert.match(customerOrders, /WHERE o\.user_id = \$1/, "Un client ne peut lire que ses propres commandes.");
 assert.match(adminOrders, /requireAdmin\(\)/, "La gestion des commandes est réservée aux administrateurs.");
 assert.match(adminProducts, /requireAdmin\(\)/, "La gestion des produits est réservée aux administrateurs.");
+assert.match(adminVehiclesApi, /requireAdmin\(\)/, "La gestion des véhicules est réservée aux administrateurs.");
+assert.match(adminVehiclesApi, /yearTo<d\.yearFrom/, "L’API doit refuser une plage d’années inversée.");
+assert.match(adminVehiclesApi, /Ce véhicule existe déjà/, "L’API doit prévenir les doublons de véhicules.");
+assert.match(adminVehicles, /setSaving\(true\)/, "Le formulaire véhicule doit empêcher les doubles soumissions.");
+assert.match(adminVehicles, /role="alert"/, "Les erreurs du formulaire véhicule doivent être annoncées.");
+assert.match(adminVehicles, /cache: "no-store"/, "La liste des véhicules doit être rechargée sans cache.");
 
 assert.match(catalogue, /p\.currency = \$9/, "Le filtre de prix doit respecter la devise sélectionnée.");
 assert.match(catalogue, /p\.currency ASC, p\.price ASC/, "Le tri des prix doit séparer les devises.");
@@ -68,4 +76,4 @@ for (const [name, source] of [["inscription", register], ["connexion", login]]) 
   assert.match(source, /z\.email\(\)\.max\(254\)/, "L'e-mail doit être validé : " + name + ".");
 }
 
-console.log("Contrôles réussis : catalogue, équivalences, commandes, accès, devises et normalisation des e-mails.");
+console.log("Contrôles réussis : catalogue, équivalences, commandes, accès, devises, véhicules et normalisation des e-mails.");
