@@ -70,7 +70,7 @@ export function ReferencePage({slug}:{slug:string}) {
     return ()=>{active=false;};
   },[]);
 
-  const categories=useMemo(()=>["Toutes",...Array.from(new Set(products.map(p=>p.category_name).filter((x):x is string=>Boolean(x))).sort((a,b)=>a.localeCompare(b,"fr"))],[products]);
+  const categories=useMemo(()=>["Toutes",...Array.from(new Set(products.map(p=>p.category_name).filter((x):x is string=>Boolean(x)))).sort((a,b)=>a.localeCompare(b,"fr"))],[products]);
   const filtered=useMemo(()=>products.filter(p=>
     (category==="Toutes"||p.category_name===category) &&
     (p.name+" "+p.sku+" "+(p.description||"")).toLocaleLowerCase("fr").includes(search.trim().toLocaleLowerCase("fr"))
