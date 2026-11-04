@@ -15,6 +15,8 @@ const productPage = read("src/app/produit/[slug]/page.tsx");
 const cartPage = read("src/app/panier/page.tsx");
 const adminMetrics = read("src/app/api/admin/metrics/route.ts");
 const referencePages = read("src/components/reference-pages.tsx");
+const homePage = read("src/app/page.tsx");
+const inquiries = read("src/app/api/inquiries/route.ts");
 
 assert.match(products, /p\.is_active\s*=\s*true/, "Le catalogue public ne doit exposer que les pièces actives.");
 assert.match(equivalents, /e\.verified\s*=\s*true/, "Les équivalences publiques doivent être vérifiées.");
@@ -40,6 +42,8 @@ assert.match(adminMetrics, /requireAdmin\(\)/, "Les indicateurs de gestion doive
 assert.match(adminMetrics, /low_stock_products/, "Le stock faible doit provenir de la base.");
 assert.match(referencePages, /fetch\("\/api\/admin\/metrics"/, "Les pages administrateur doivent charger les indicateurs réels.");
 assert.doesNotMatch(referencePages, /"À vérifier"/, "Les indicateurs fictifs ne doivent pas être affichés.");
+assert.match(inquiries, /NextResponse\.redirect\(new URL\("\/\?contact=sent#contact"/, "Le formulaire public doit revenir avec un état de confirmation.");
+assert.match(homePage, /params\.contact==="sent"/, "La page d’accueil doit afficher la confirmation de demande.");
 
 for (const [name, source] of [["inscription", register], ["connexion", login]]) {
   assert.match(source, /trim\(\)\.toLowerCase\(\)/, "L'e-mail doit être normalisé avant validation : " + name + ".");
