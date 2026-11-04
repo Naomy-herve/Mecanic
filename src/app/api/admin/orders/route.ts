@@ -37,7 +37,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
 
-  let client: Awaited<ReturnType<typeof db.connect>> | undefined;
+  let client: import("pg").PoolClient | undefined;
   try {
     const parsed = schema.safeParse(await req.json());
     if (!parsed.success) {
