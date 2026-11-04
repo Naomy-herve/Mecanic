@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 import { ReferencePage } from "@/components/reference-pages";
 
 const slugs = [
@@ -7,10 +8,26 @@ const slugs = [
   "recherche-vehicule","recherche-reference","rapports-admin","boutique-nocturne","resultats-filtres"
 ];
 
+const adminPages = new Set([
+  "tableau-de-bord",
+  "statistiques-ventes",
+  "gestion-inventaire",
+  "rapports-admin"
+]);
+
 export function generateStaticParams(){ return slugs.map(page=>({page})); }
 
 export default async function ReferenceExperience({params}:{params:Promise<{page:string}>}){
   const {page}=await params;
   if(!slugs.includes(page)) notFound();
+
+  // These four reference experiences display operational inventory and admin
+  // indicators, so they must follow the same server-side access rule as /admin.
+  if(adminPages.has(page)){
+    const session=await getSession();
+    if(!session) redirect("/compte");
+    if(session.role!=="admin") redirect("/");
+  }
+
   return <ReferencePage slug={page}/>;
 }
