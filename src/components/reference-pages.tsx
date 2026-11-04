@@ -44,6 +44,13 @@ type Vehicle = {
   generation: string | null;
 };
 
+type AdminMetrics = {
+  active_products: number;
+  vehicles: number;
+  categories: number;
+  low_stock_products: number;
+};
+
 function ContactButton({label="Demander cette pièce", reference=""}:{label?:string;reference?:string}) {
   const message = reference
     ? "Bonjour KIA PIÈCE, je souhaite des informations sur la référence " + reference + ". Merci de confirmer le prix et la disponibilité."
@@ -69,6 +76,9 @@ export function ReferencePage({slug}:{slug:string}) {
   const [equivalentsLoading,setEquivalentsLoading]=useState(false);
   const [equivalentsError,setEquivalentsError]=useState("");
   const [notice,setNotice]=useState("");
+  const [adminMetrics,setAdminMetrics]=useState<AdminMetrics|null>(null);
+  const [metricsLoading,setMetricsLoading]=useState(false);
+  const [metricsError,setMetricsError]=useState("");
 
   useEffect(()=>{
     let active=true;
@@ -99,6 +109,18 @@ export function ReferencePage({slug}:{slug:string}) {
       .finally(()=>{if(active)setEquivalentsLoading(false);});
     return ()=>{active=false;};
   },[selected]);
+
+  useEffect(()=>{
+    if(page?.style!=="admin") return;
+    let active=true;
+    setMetricsLoading(true);
+    fetch("/api/admin/metrics",{cache:"no-store"})
+      .then(async response=>{const data=await response.json();if(!response.ok)throw new Error(data.error||"Indicateurs indisponibles.");return data;})
+      .then(data=>{if(active)setAdminMetrics(data.metrics||null);})
+      .catch(error=>{if(active)setMetricsError(error instanceof Error?error.message:"Indicateurs indisponibles.");})
+      .finally(()=>{if(active)setMetricsLoading(false);});
+    return ()=>{active=false;};
+  },[page?.style]);
 
   useEffect(()=>{
     if(page?.kind!=="vehicle") return;
@@ -189,7 +211,13 @@ export function ReferencePage({slug}:{slug:string}) {
       </div>
       {productCards}<ContactButton label="Faire vérifier la compatibilité" reference={selected?.sku||""}/></section> :
       page.style==="admin" ? <>
-        <div className="ref-metrics">{["Pièces enregistrées","Références affichées","Catégories","Stock faible"].map((x,i)=><div key={x}><small>{x}</small><strong>{i===0||i===1?products.length:i===2?categories.length-1:"À vérifier"}</strong><span>{["Catalogue réel","Données actives","Familles renseignées","Seuil administrateur"][i]}</span></div>)}</div>
+        <div className="ref-metrics">{[
+          ["Pièces actives",adminMetrics?.active_products],
+          ["Véhicules",adminMetrics?.vehicles],
+          ["Catégories",adminMetrics?.categories],
+          ["Pièces en stock faible",adminMetrics?.low_stock_products]
+        ].map(([label,value])=><div key={String(label)}><small>{label}</small><strong>{metricsLoading?"…":metricsError?"—":value??"—"}</strong><span>{metricsError?"Indicateur indisponible":"Données réelles de la base"}</span></div>)}</div>
+        {metricsError&&<p className="ref-notice" role="alert">{metricsError}</p>}
         <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">GESTION</div><h2>{page.kind==="inventory"?"Inventaire des pièces":page.kind==="reports"?"Rapports et activité":page.kind==="stats"?"Indicateurs de la boutique":"Dernières références"}</h2></div><Link href="/admin">Ouvrir l’administration complète ↗</Link></div>{adminTable}</section>
       </> :
       <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">{page.kind==="responsive"?"MOBILE · TABLETTE · DESKTOP":"SÉLECTION DE PIÈCES"}</div><h2>{page.kind==="results"?"Affinez votre sélection":"Pièces disponibles dans le catalogue"}</h2></div><span className="ref-live">● Catalogue connecté</span></div>{productCards}
