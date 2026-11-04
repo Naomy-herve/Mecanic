@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {requireAdmin} from "@/lib/auth";import {query} from "@/lib/db";
+export async function GET(){if(!await requireAdmin())return NextResponse.json({error:"Accès refusé."},{status:403});const r=await query("SELECT id,name,email,phone,subject,message,status,created_at FROM inquiries ORDER BY created_at DESC LIMIT 100");return NextResponse.json({inquiries:r.rows});}
