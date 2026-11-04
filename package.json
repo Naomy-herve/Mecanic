@@ -1,1 +1,29 @@
-{"name":"kia-piece-store","version":"1.0.0","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start","typecheck":"tsc --noEmit","check:references":"node scripts/check-reference-pages.mjs"},"dependencies":{"bcryptjs":"^3.0.2","jose":"^6.1.0","next":"^15.5.6","pg":"^8.16.3","react":"^19.1.1","react-dom":"^19.1.1","zod":"^4.1.12"},"devDependencies":{"@types/node":"^22.18.12","@types/pg":"^8.15.5","@types/react":"^19.1.16","@types/react-dom":"^19.1.9","typescript":"^5.9.3"}}
+{
+  "name": "kia-piece-store",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "check:references": "node scripts/check-reference-pages.mjs",
+    "check:commerce": "node scripts/check-commerce-security.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.1.0",
+    "next": "^15.5.6",
+    "pg": "^8.16.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.12",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.3"
+  }
+}
