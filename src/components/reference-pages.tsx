@@ -33,6 +33,17 @@ type Product = {
   category_name: string | null;
 };
 
+type Equivalent = Product & { notes?: string | null };
+type Vehicle = {
+  id: string;
+  make: string;
+  model: string;
+  year_from: number | null;
+  year_to: number | null;
+  engine: string | null;
+  generation: string | null;
+};
+
 function ContactButton({label="Demander cette pièce", reference=""}:{label?:string;reference?:string}) {
   const message = reference
     ? "Bonjour KIA PIÈCE, je souhaite des informations sur la référence " + reference + ". Merci de confirmer le prix et la disponibilité."
