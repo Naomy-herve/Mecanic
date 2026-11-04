@@ -30,7 +30,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   const q = (p.q || "").trim().slice(0, 100);
   const cat = (p.category || "").trim().slice(0, 80);
   const model = (p.model || "").trim().slice(0, 80);
-  const year = /^\\d{4}$/.test(p.year || "") ? Number(p.year) : null;
+  const year = /^\d{4}$/.test(p.year || "") ? Number(p.year) : null;
   const engine = (p.engine || "").trim().slice(0, 80);
   const min = p.min && Number.isFinite(Number(p.min)) && Number(p.min) >= 0 ? Number(p.min) : null;
   const max = p.max && Number.isFinite(Number(p.max)) && Number(p.max) >= 0 ? Number(p.max) : null;
@@ -50,7 +50,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
     AND ($3 = '' OR EXISTS (
       SELECT 1 FROM product_compatibility pc
       JOIN vehicles v ON v.id = pc.vehicle_id
-      WHERE pc.product_id = p.id AND v.model = $3
+      WHERE pc.product_id = p.id AND lower(v.model) = lower($3)
       AND ($4::int IS NULL OR ((v.year_from IS NULL OR v.year_from <= $4) AND (v.year_to IS NULL OR v.year_to >= $4)))
       AND ($5 = '' OR coalesce(v.engine, '') ILIKE '%' || $5 || '%')
     ))
