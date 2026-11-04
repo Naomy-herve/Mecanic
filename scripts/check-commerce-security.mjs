@@ -47,6 +47,7 @@ assert.doesNotMatch(referencePages, /"À vérifier"/, "Les indicateurs fictifs n
 assert.match(inquiries, /NextResponse\.redirect\(new URL\("\/\?contact=sent#contact"/, "Le formulaire public doit revenir avec un état de confirmation.");
 assert.match(homePage, /params\.contact==="sent"/, "La page d’accueil doit afficher la confirmation de demande.");
 assert.match(siteHeader, /href="\/panier"/, "Le panier doit être accessible depuis la navigation principale.");
+assert.match(siteHeader, /<Link href="\/compte">Mon compte<\/Link>/, "Le compte doit rester accessible dans la navigation mobile.");
 assert.match(globalCss, /@media\(max-width:800px\)\{[^}]*\.nav-wrap[^}]*\}[\s\S]*?\.main-nav\{display:flex/, "La navigation principale doit rester visible sur mobile.");
 assert.match(globalCss, /:focus-visible\{outline:/, "Les éléments interactifs doivent avoir un indicateur de focus clavier.");
 
