@@ -18,6 +18,7 @@ const referencePages = read("src/components/reference-pages.tsx");
 const homePage = read("src/app/page.tsx");
 const inquiries = read("src/app/api/inquiries/route.ts");
 const siteHeader = read("src/components/site-header.tsx");
+const globalCss = read("src/app/globals.css");
 
 assert.match(products, /p\.is_active\s*=\s*true/, "Le catalogue public ne doit exposer que les pièces actives.");
 assert.match(equivalents, /e\.verified\s*=\s*true/, "Les équivalences publiques doivent être vérifiées.");
@@ -46,6 +47,8 @@ assert.doesNotMatch(referencePages, /"À vérifier"/, "Les indicateurs fictifs n
 assert.match(inquiries, /NextResponse\.redirect\(new URL\("\/\?contact=sent#contact"/, "Le formulaire public doit revenir avec un état de confirmation.");
 assert.match(homePage, /params\.contact==="sent"/, "La page d’accueil doit afficher la confirmation de demande.");
 assert.match(siteHeader, /href="\/panier"/, "Le panier doit être accessible depuis la navigation principale.");
+assert.match(globalCss, /@media\(max-width:800px\)\{[^}]*\.nav-wrap[^}]*\}[\s\S]*?\.main-nav\{display:flex/, "La navigation principale doit rester visible sur mobile.");
+assert.match(globalCss, /:focus-visible\{outline:/, "Les éléments interactifs doivent avoir un indicateur de focus clavier.");
 
 for (const [name, source] of [["inscription", register], ["connexion", login]]) {
   assert.match(source, /trim\(\)\.toLowerCase\(\)/, "L'e-mail doit être normalisé avant validation : " + name + ".");
