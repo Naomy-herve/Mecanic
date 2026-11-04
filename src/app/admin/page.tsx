@@ -1,5 +1,5 @@
 import {redirect} from "next/navigation";
-import {getSession} from "@/lib/auth";
+import {requireAdmin} from "@/lib/auth";
 import {query} from "@/lib/db";
 import Link from "next/link";
 
@@ -11,9 +11,8 @@ const money = (amount: string, currency: string) => new Intl.NumberFormat("fr-FR
 const statusLabel: Record<string,string> = {pending:"En attente",confirmed:"Confirmée",processing:"En préparation",shipped:"Expédiée",delivered:"Livrée",cancelled:"Annulée"};
 
 export default async function Admin(){
-  const u=await getSession();
+  const u=await requireAdmin();
   if(!u)redirect("/compte");
-  if(u.role!=="admin")redirect("/");
   const [p,o,i,c,today,stock,low,out,fulfilled,revenue,recent]=await Promise.all([
     query<Count>("SELECT count(*)::text n FROM products WHERE is_active=true"),
     query<Count>("SELECT count(*)::text n FROM orders"),
