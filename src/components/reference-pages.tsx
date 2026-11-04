@@ -47,8 +47,8 @@ export function ReferencePage({slug}:{slug:string}) {
   const [loadError,setLoadError]=useState("");
   const [search,setSearch]=useState("");
   const [category,setCategory]=useState("Toutes");
-  const [vehicle,setVehicle]=useState("Sportage");
-  const [year,setYear]=useState("2020");
+  const [vehicle,setVehicle]=useState("");
+  const [year,setYear]=useState("");
   const [engine,setEngine]=useState("");
   const [selected,setSelected]=useState<Product|null>(null);
   const [notice,setNotice]=useState("");
@@ -124,11 +124,11 @@ export function ReferencePage({slug}:{slug:string}) {
         <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">SÉLECTION DU CATALOGUE</div><h2>Quelques références disponibles</h2></div><Link href="/reference/catalogue-pieces">Voir le catalogue complet ↗</Link></div>{productCards}</section>
       </> :
       page.kind==="vehicle" ? <section className="ref-panel ref-vehicle-panel"><div className="ref-eyebrow">TROUVER LES PIÈCES ADAPTÉES</div><h2>Quel est votre véhicule ?</h2><div className="ref-form-grid">
-        <label>Modèle<select value={vehicle} onChange={e=>setVehicle(e.target.value)}>{["Picanto","Rio","Ceed","Cerato","Sportage","Sorento","Seltos"].map(x=><option key={x}>{x}</option>)}</select></label>
-        <label>Année<select value={year} onChange={e=>setYear(e.target.value)}>{Array.from({length:27},(_,i)=>String(2026-i)).map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>Modèle Kia<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder="Ex. Sportage" required/></label>
+        <label>Année<input type="number" min="1980" max="2035" value={year} onChange={e=>setYear(e.target.value)} placeholder="Ex. 2020"/></label>
         <label>Motorisation<input value={engine} onChange={e=>setEngine(e.target.value)} placeholder="Motorisation (facultatif)"/></label>
       </div>
-      <button className="ref-cta" onClick={()=>setNotice("Recherche préparée pour Kia "+vehicle+" ("+year+")"+(engine?" · "+engine:"")+". La compatibilité doit être confirmée à partir des données véhicule enregistrées.")}>Préparer ma recherche ↗</button>
+      <button className="ref-cta" onClick={()=>{if(!vehicle.trim()){setNotice("Saisissez le modèle de votre Kia.");return;}const params=new URLSearchParams({model:vehicle.trim()});if(year)params.set("year",year);window.location.href="/catalogue?"+params.toString();}}>Afficher les pièces compatibles ↗</button>
       <p className="ref-notice">La sélection du véhicule ne certifie pas à elle seule la compatibilité. Demandez confirmation avant achat.</p>
       {notice&&<p className="ref-notice" role="status">{notice}</p>}<ContactButton label="Confirmer la compatibilité"/></section> :
       page.kind==="reference" ? <section className="ref-panel ref-reference-panel"><div className="ref-search-icon">⌕</div><h2>Rechercher une référence constructeur</h2><p>Entrez le numéro figurant sur votre ancienne pièce ou votre documentation.</p>
