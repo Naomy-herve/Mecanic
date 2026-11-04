@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProductImage from "@/components/product-image";
+import { AddToCart } from "@/components/add-to-cart";
 import { query } from "@/lib/db";
 
 type Product = {
@@ -146,7 +147,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
                     <p className="muted">Réf. {p.sku}</p>
                     <p className="muted">{p.stock_quantity > 0 ? `${p.stock_quantity} disponible(s)` : "Disponibilité à confirmer"}</p>
                     <div className="price">{money(p.price, p.currency)}</div>
-                    <Link className="btn btn-primary" style={{ marginTop: 12, width: "100%" }} href={"/produit/" + p.slug}>Voir la pièce</Link>
+                    <div style={{display:"grid",gap:8,marginTop:12}}><Link className="btn btn-outline" href={"/produit/" + p.slug}>Voir la pièce</Link><AddToCart product={{id:p.id,sku:p.sku,name:p.name,price:Number(p.price),currency:p.currency}} disabled={p.stock_quantity<=0}/></div>
                   </div>
                 </article>
               ))}
