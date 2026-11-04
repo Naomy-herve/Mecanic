@@ -51,6 +51,7 @@ export default async function Admin(){
       <Link className="btn btn-outline" href="/admin/categories">Catégories</Link>
       <Link className="btn btn-outline" href="/admin/clients">Clients</Link>
       <Link className="btn btn-outline" href="/admin/vehicules">Compatibilités</Link>
+      <Link className="btn btn-outline" href="/admin/equivalences">Pièces équivalentes</Link>
       <Link className="btn btn-outline" href="/admin/commandes">Commandes</Link>
       <Link className="btn btn-outline" href="/admin/demandes">Demandes clients</Link>
     </div>
