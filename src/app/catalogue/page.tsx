@@ -8,7 +8,7 @@ type Product = {
   image_url: string | null; category_name: string | null;
 };
 type Params = {
-  q?: string; category?: string; model?: string; year?: string;
+  q?: string; category?: string; model?: string; year?: string; engine?: string;
   availability?: string; min?: string; max?: string; sort?: string;
   view?: string; page?: string;
 };
@@ -31,13 +31,14 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   const cat = (p.category || "").trim().slice(0, 80);
   const model = (p.model || "").trim().slice(0, 80);
   const year = /^\\d{4}$/.test(p.year || "") ? Number(p.year) : null;
+  const engine = (p.engine || "").trim().slice(0, 80);
   const min = p.min && Number.isFinite(Number(p.min)) && Number(p.min) >= 0 ? Number(p.min) : null;
   const max = p.max && Number.isFinite(Number(p.max)) && Number(p.max) >= 0 ? Number(p.max) : null;
   const availability = p.availability === "available" ? "available" : "";
   const sort = ORDER_BY[p.sort || ""] ? p.sort! : "recent";
   const view = p.view === "list" ? "list" : "grid";
   const requestedPage = Math.max(1, Math.min(1000, Number.parseInt(p.page || "1", 10) || 1));
-  const values = [q, cat, model, year, min, max, availability];
+  const values = [q, cat, model, year, engine, min, max, availability];
   let products: Product[] = [];
   let cats: { name: string; slug: string }[] = [];
   let total = 0;
@@ -51,10 +52,11 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
       JOIN vehicles v ON v.id = pc.vehicle_id
       WHERE pc.product_id = p.id AND v.model = $3
       AND ($4::int IS NULL OR ((v.year_from IS NULL OR v.year_from <= $4) AND (v.year_to IS NULL OR v.year_to >= $4)))
+      AND ($5 = '' OR coalesce(v.engine, '') ILIKE '%' || $5 || '%')
     ))
-    AND ($5::numeric IS NULL OR p.price >= $5)
-    AND ($6::numeric IS NULL OR p.price <= $6)
-    AND ($7 = '' OR p.stock_quantity > 0)`;
+    AND ($6::numeric IS NULL OR p.price >= $6)
+    AND ($7::numeric IS NULL OR p.price <= $7)
+    AND ($8 = '' OR p.stock_quantity > 0)`;
 
   try {
     cats = (await query<{ name: string; slug: string }>("SELECT name, slug FROM categories ORDER BY name")).rows;
@@ -69,7 +71,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
       `SELECT p.id, p.sku, p.name, p.slug, p.description, p.price, p.currency,
         p.stock_quantity, p.condition, p.image_url, c.name AS category_name
        FROM products p LEFT JOIN categories c ON c.id = p.category_id
-       WHERE ${where} ORDER BY ${ORDER_BY[sort]} LIMIT $8 OFFSET $9`,
+       WHERE ${where} ORDER BY ${ORDER_BY[sort]} LIMIT $9 OFFSET $10`,
       [...values, PAGE_SIZE, (page - 1) * PAGE_SIZE]
     )).rows;
   } catch {
@@ -80,7 +82,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   const page = Math.min(requestedPage, totalPages);
   const queryString = (nextPage: number) => {
     const params = new URLSearchParams();
-    for (const [key, value] of Object.entries({ q, category: cat, model, year: year?.toString() || "", min: min?.toString() || "", max: max?.toString() || "", availability, sort, view })) {
+    for (const [key, value] of Object.entries({ q, category: cat, model, year: year?.toString() || "", engine, min: min?.toString() || "", max: max?.toString() || "", availability, sort, view })) {
       if (value) params.set(key, value);
     }
     params.set("page", String(nextPage));
@@ -103,6 +105,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
             <label><span>Catégorie</span><select name="category" defaultValue={cat}><option value="">Toutes</option>{cats.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}</select></label>
             <label><span>Modèle Kia</span><input name="model" defaultValue={model} placeholder="Ex. Sportage" /></label>
             <label><span>Année</span><input name="year" type="number" min="1980" max="2035" defaultValue={year || ""} placeholder="2018" /></label>
+            <label><span>Motorisation</span><input name="engine" defaultValue={engine} placeholder="Ex. 1.6 T-GDi" /></label>
           </div>
           <div className="catalogue-filter-row">
             <label><span>Prix minimum</span><input name="min" type="number" min="0" step="0.01" defaultValue={min ?? ""} placeholder="0" /></label>
