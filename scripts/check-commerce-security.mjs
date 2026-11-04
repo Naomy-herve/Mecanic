@@ -13,6 +13,8 @@ const login = read("src/app/api/auth/login/route.ts");
 const catalogue = read("src/app/catalogue/page.tsx");
 const productPage = read("src/app/produit/[slug]/page.tsx");
 const cartPage = read("src/app/panier/page.tsx");
+const adminMetrics = read("src/app/api/admin/metrics/route.ts");
+const referencePages = read("src/components/reference-pages.tsx");
 
 assert.match(products, /p\.is_active\s*=\s*true/, "Le catalogue public ne doit exposer que les pièces actives.");
 assert.match(equivalents, /e\.verified\s*=\s*true/, "Les équivalences publiques doivent être vérifiées.");
@@ -34,6 +36,10 @@ assert.match(catalogue, /p\.currency = \$9/, "Le filtre de prix doit respecter l
 assert.match(catalogue, /p\.currency ASC, p\.price ASC/, "Le tri des prix doit séparer les devises.");
 assert.match(productPage, /style:"currency",currency/, "Les prix produit doivent respecter le format monétaire.");
 assert.match(cartPage, /style:"currency",currency/, "Les totaux du panier doivent respecter le format monétaire.");
+assert.match(adminMetrics, /requireAdmin\(\)/, "Les indicateurs de gestion doivent être protégés.");
+assert.match(adminMetrics, /low_stock_products/, "Le stock faible doit provenir de la base.");
+assert.match(referencePages, /fetch\("\/api\/admin\/metrics"/, "Les pages administrateur doivent charger les indicateurs réels.");
+assert.doesNotMatch(referencePages, /"À vérifier"/, "Les indicateurs fictifs ne doivent pas être affichés.");
 
 for (const [name, source] of [["inscription", register], ["connexion", login]]) {
   assert.match(source, /trim\(\)\.toLowerCase\(\)/, "L'e-mail doit être normalisé avant validation : " + name + ".");
