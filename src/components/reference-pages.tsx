@@ -50,6 +50,7 @@ export function ReferencePage({slug}:{slug:string}) {
   const [vehicles,setVehicles]=useState<Vehicle[]>([]);
   const [vehiclesLoading,setVehiclesLoading]=useState(false);
   const [vehicle,setVehicle]=useState("");
+  const [selectedVehicleId,setSelectedVehicleId]=useState("");
   const [year,setYear]=useState("");
   const [engine,setEngine]=useState("");
   const [selected,setSelected]=useState<Product|null>(null);
@@ -154,7 +155,7 @@ export function ReferencePage({slug}:{slug:string}) {
         <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">SÉLECTION DU CATALOGUE</div><h2>Quelques références disponibles</h2></div><Link href="/reference/catalogue-pieces">Voir le catalogue complet ↗</Link></div>{productCards}</section>
       </> :
       page.kind==="vehicle" ? <section className="ref-panel ref-vehicle-panel"><div className="ref-eyebrow">TROUVER LES PIÈCES ADAPTÉES</div><h2>Quel est votre véhicule ?</h2><div className="ref-form-grid">
-        <label>Modèle Kia{vehicles.length>0?<select value={vehicle} onChange={e=>{const v=vehicles.find(x=>x.id===e.target.value);setVehicle(v?.model||"");setYear(v?.year_from?String(v.year_from):"");setEngine(v?.engine||"");}}><option value="">Choisir un véhicule enregistré</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.make} {v.model}{v.year_from?" · "+v.year_from+(v.year_to&&v.year_to!==v.year_from?"–"+v.year_to:""):""}{v.generation?" · "+v.generation:""}</option>)}</select>:<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder={vehiclesLoading?"Chargement des véhicules…":"Aucun véhicule enregistré — saisir le modèle"} required/>}</label>
+        <label>Modèle Kia{vehicles.length>0?<select value={selectedVehicleId} onChange={e=>{const v=vehicles.find(x=>x.id===e.target.value);setSelectedVehicleId(e.target.value);setVehicle(v?.model||"");setYear(v?.year_from?String(v.year_from):"");setEngine(v?.engine||"");}}><option value="">Choisir un véhicule enregistré</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.make} {v.model}{v.year_from?" · "+v.year_from+(v.year_to&&v.year_to!==v.year_from?"–"+v.year_to:""):""}{v.generation?" · "+v.generation:""}</option>)}</select>:<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder={vehiclesLoading?"Chargement des véhicules…":"Aucun véhicule enregistré — saisir le modèle"} required/>}</label>
         <label>Année<input type="number" min="1980" max="2035" value={year} onChange={e=>setYear(e.target.value)} placeholder="Ex. 2020"/></label>
         <label>Motorisation<input value={engine} onChange={e=>setEngine(e.target.value)} placeholder="Motorisation (facultatif)"/></label>
       </div>
