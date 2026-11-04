@@ -17,6 +17,7 @@ const adminMetrics = read("src/app/api/admin/metrics/route.ts");
 const referencePages = read("src/components/reference-pages.tsx");
 const homePage = read("src/app/page.tsx");
 const inquiries = read("src/app/api/inquiries/route.ts");
+const siteHeader = read("src/components/site-header.tsx");
 
 assert.match(products, /p\.is_active\s*=\s*true/, "Le catalogue public ne doit exposer que les pièces actives.");
 assert.match(equivalents, /e\.verified\s*=\s*true/, "Les équivalences publiques doivent être vérifiées.");
@@ -44,6 +45,7 @@ assert.match(referencePages, /fetch\("\/api\/admin\/metrics"/, "Les pages admini
 assert.doesNotMatch(referencePages, /"À vérifier"/, "Les indicateurs fictifs ne doivent pas être affichés.");
 assert.match(inquiries, /NextResponse\.redirect\(new URL\("\/\?contact=sent#contact"/, "Le formulaire public doit revenir avec un état de confirmation.");
 assert.match(homePage, /params\.contact==="sent"/, "La page d’accueil doit afficher la confirmation de demande.");
+assert.match(siteHeader, /href="\/panier"/, "Le panier doit être accessible depuis la navigation principale.");
 
 for (const [name, source] of [["inscription", register], ["connexion", login]]) {
   assert.match(source, /trim\(\)\.toLowerCase\(\)/, "L'e-mail doit être normalisé avant validation : " + name + ".");
