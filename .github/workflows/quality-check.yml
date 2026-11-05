@@ -30,6 +30,11 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Dependency security audit
+        run: |
+          npm audit --json > npm-audit-report.json || true
+          node -e 'const r=JSON.parse(require("fs").readFileSync("npm-audit-report.json","utf8")); const v=Object.entries(r.vulnerabilities || {}).map(([name,item]) => ({name,severity:item.severity,range:item.range,fixAvailable:item.fixAvailable,advisories:(item.via || []).filter(x => typeof x === "object").map(x => ({title:x.title,url:x.url,range:x.range}))})); console.log(JSON.stringify({summary:r.metadata?.vulnerabilities,packages:v},null,2));'
+
       - name: Reference pages validation
         run: npm run check:references
 
