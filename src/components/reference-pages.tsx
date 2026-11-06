@@ -19,6 +19,8 @@ const pages = [
   { slug:"resultats-filtres", n:"13", title:"Résultats & filtres", eyebrow:"RÉSULTATS DU CATALOGUE", desc:"Affinez les résultats par catégorie, état et disponibilité.", style:"light", kind:"results" },
 ] as const;
 
+type Category = { id:string; name:string; slug:string; description?:string|null };
+
 type Product = {
   id: string;
   sku: string;
@@ -65,6 +67,7 @@ function ContactButton({label="Demander cette pièce", reference=""}:{label?:str
 export function ReferencePage({slug}:{slug:string}) {
   const page=pages.find(p=>p.slug===slug);
   const [products,setProducts]=useState<Product[]>([]);
+  const [categoryItems,setCategoryItems]=useState<Category[]>([]);
   const [loading,setLoading]=useState(true);
   const [loadError,setLoadError]=useState("");
   const [search,setSearch]=useState("");
@@ -83,6 +86,15 @@ export function ReferencePage({slug}:{slug:string}) {
   const [adminMetrics,setAdminMetrics]=useState<AdminMetrics|null>(null);
   const [metricsLoading,setMetricsLoading]=useState(false);
   const [metricsError,setMetricsError]=useState("");
+
+  useEffect(()=>{
+    let active=true;
+    fetch("/api/categories",{cache:"no-store"})
+      .then(async response=>{const data=await response.json();if(!response.ok)throw new Error("Catégories indisponibles.");return data;})
+      .then(data=>{if(active)setCategoryItems(Array.isArray(data.categories)?data.categories:[]);})
+      .catch(()=>{if(active)setCategoryItems([]);});
+    return ()=>{active=false;};
+  },[]);
 
   useEffect(()=>{
     let active=true;
@@ -183,12 +195,12 @@ export function ReferencePage({slug}:{slug:string}) {
 
   return <main className={"ref-page ref-"+page.style}>
     <div className="ref-container">
-      <div className="ref-breadcrumb"><Link href="/">KIA PIÈCE</Link><span>/</span><span>Pages de référence</span><span>/</span><b>{page.title}</b></div>
-      <div className="ref-heading"><div><div className="ref-eyebrow">{page.eyebrow}</div><h1>{page.title}</h1><p>{page.desc}</p></div><div className="ref-page-number">{page.n}<small>/ 13</small></div></div>
+      {page.kind!=="home"&&<><div className="ref-breadcrumb"><Link href="/">KIA PIÈCE</Link><span>/</span><span>Pages de référence</span><span>/</span><b>{page.title}</b></div>
+      <div className="ref-heading"><div><div className="ref-eyebrow">{page.eyebrow}</div><h1>{page.title}</h1><p>{page.desc}</p></div><div className="ref-page-number">{page.n}<small>/ 13</small></div></div></>}
 
       {page.kind==="home"||page.kind==="premium" ? <>
         <section className="ref-hero-art"><div><span className="ref-eyebrow">PIÈCES AUTOMOBILES KIA</span><h2>La précision<br/><em>dans chaque pièce.</em></h2><p>Identifiez votre véhicule, explorez les familles de pièces et contactez notre équipe pour confirmer la disponibilité.</p><div className="ref-actions"><Link className="ref-cta" href="/reference/catalogue-pieces">Explorer le catalogue ↗</Link><ContactButton label="Contacter l’équipe"/></div></div><div className="ref-car-shape"><div className="ref-car-line"/><span>KIA</span></div></section>
-        <div className="ref-categories">{categories.slice(1).map((c,i)=><Link key={c} href="/reference/catalogue-pieces"><b>{String(i+1).padStart(2,"0")}</b><span>{c}</span><i>↗</i></Link>)}</div>
+        <div className="ref-categories">{categoryItems.map((c,i)=><Link key={c.id} href={"/reference/catalogue-pieces?category="+encodeURIComponent(c.slug)}><b>{String(i+1).padStart(2,"0")}</b><span>{c.name}</span><i>↗</i></Link>)}</div>
         <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">SÉLECTION DU CATALOGUE</div><h2>Quelques références disponibles</h2></div><Link href="/reference/catalogue-pieces">Voir le catalogue complet ↗</Link></div>{productCards}</section>
       </> :
       page.kind==="vehicle" ? <section className="ref-panel ref-vehicle-panel"><div className="ref-eyebrow">TROUVER LES PIÈCES ADAPTÉES</div><h2>Quel est votre véhicule ?</h2><div className="ref-form-grid">
