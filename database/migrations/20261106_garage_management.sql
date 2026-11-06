@@ -1,0 +1,2 @@
+-- KIA PIECE additive garage schema migration. Apply on development branch first.
+CREATE TABLE IF NOT EXISTS garages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, phone TEXT, email TEXT, address JSONB NOT NULL DEFAULT '{}'::jsonb, timezone TEXT NOT NULL DEFAULT 'Indian/Antananarivo', currency CHAR(3) NOT NULL DEFAULT 'MGA', is_active BOOLEAN NOT NULL DEFAULT true, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now());
