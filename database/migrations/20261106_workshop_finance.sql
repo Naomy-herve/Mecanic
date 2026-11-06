@@ -152,3 +152,9 @@ CREATE INDEX IF NOT EXISTS payments_order_idx ON payments(order_id,created_at DE
 CREATE INDEX IF NOT EXISTS invoices_customer_idx ON invoices(customer_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications(user_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS audit_logs_entity_idx ON audit_logs(entity_type,entity_id,created_at DESC);
+
+-- The invoice line table is extended additively so the migration can be rerun safely.
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS product_id UUID REFERENCES products(id) ON DELETE SET NULL;
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'part';
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS tax_rate NUMERIC(5,2) NOT NULL DEFAULT 0;
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS line_total NUMERIC(12,2) NOT NULL DEFAULT 0;
