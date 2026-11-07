@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Le devis doit être approuvé avant la consommation de pièces." }, { status: 409 });
     }
     const product = await client.query(
-      "SELECT id,sku,name,price,purchase_price,stock_quantity FROM products WHERE id=$1 AND is_active=true FOR UPDATE",
+      "SELECT id,sku,name,price,purchase_price,stock_quantity,reserved_quantity FROM products WHERE id=$1 AND is_active=true FOR UPDATE",
       [data.productId]
     );
     if (!product.rowCount) {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pièce introuvable ou inactive." }, { status: 404 });
     }
     const row = product.rows[0];
-    if (Number(row.stock_quantity) < data.quantity) {
+    if (Number(row.stock_quantity) - Number(row.reserved_quantity) < data.quantity) {
       await client.query("ROLLBACK");
       return NextResponse.json({ error: "Stock insuffisant pour cette intervention." }, { status: 409 });
     }
