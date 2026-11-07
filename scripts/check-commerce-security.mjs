@@ -172,6 +172,10 @@ assert.match(workshopPartsApi, /stock_quantity=stock_quantity-\$1/, "La consomma
 assert.match(workshopPartsApi, /stock_quantity\) - Number\(row\.reserved_quantity\)/, "L’atelier ne doit pas utiliser des pièces déjà réservées à un client.");
 assert.match(workshopPage, /Déduire du stock et rattacher au dossier/, "L’atelier doit proposer l’ajout d’une pièce au dossier.");
 const adminAppointments = read("src/app/api/admin/appointments/route.ts");
+const workshopApi = read("src/app/api/admin/workshop/jobs/route.ts");
+const expensePage = read("src/app/admin/depenses/page.tsx");
+const supplierApi = read("src/app/api/admin/suppliers/route.ts");
+
 assert.match(adminAppointments, /pg_advisory_xact_lock/, "Les réservations d’un même mécanicien doivent être sérialisées pour empêcher les doubles créneaux.");
 const adminPayments = read("src/app/api/admin/payments/route.ts");
 assert.match(adminPayments, /SELECT id,user_id AS customer_id,total,currency,status FROM orders/, "Un paiement de commande doit utiliser la colonne user_id réelle de la base.");
@@ -215,4 +219,12 @@ assert.match(notificationPage, /Enregistrer mes préférences/, "Le client doit 
 assert.match(order, /queueInAppNotification/, "La création d’une commande doit notifier le client connecté.");
 assert.match(adminOrders, /queueInAppNotification/, "Les changements de commande doivent notifier le client.");
 assert.match(workshopPartsApi, /movement_type/, "La consommation atelier doit conserver son historique de stock.");
+assert.match(adminAppointments, /customer_id=\$2/, "Un rendez-vous ne peut être lié qu’au véhicule du client sélectionné.");
+assert.match(adminAppointments, /ura\.role='mechanic'/, "Seuls les membres affectés au rôle mécanicien peuvent recevoir un créneau.");
+assert.match(adminAppointments, /export async function PATCH/, "Les rendez-vous doivent pouvoir être confirmés, déplacés ou annulés.");
+assert.match(workshopApi, /customer_id=\$2/, "Un dossier atelier doit vérifier la propriété du véhicule client.");
+assert.match(workshopApi, /customerApprovalNote/, "L’approbation d’un devis doit conserver l’accord du client.");
+assert.match(workshopApi, /requireStaff\("mechanic"\)/, "La mise à jour technique d’un dossier doit être réservée au mécanicien.");
+assert.match(expensePage, /supplierId:f\.get\("supplierId"\)/, "Les dépenses doivent pouvoir être associées à un fournisseur.");
+assert.match(supplierApi, /requireStaff\("storekeeper","accountant"\)/, "Le comptable doit pouvoir lire les fournisseurs pour la saisie des dépenses.");
 console.log("Contrôles réussis : inventaire traçable, créneaux atelier protégés, paiements vérifiés, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
