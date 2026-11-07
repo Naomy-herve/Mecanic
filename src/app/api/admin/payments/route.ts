@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db, query } from "@/lib/db";
 import { requireStaff } from "@/lib/auth";
+import { queueInAppNotification } from "@/lib/notifications";
 
 const createSchema = z.object({
   invoiceId: z.uuid().nullable().optional(),
@@ -218,6 +219,11 @@ export async function PATCH(req: Request) {
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'payment_status_change','payment',$2,$3::jsonb,$4::jsonb,$5)",
       [actor.id,data.id,JSON.stringify({status:payment.status}),JSON.stringify({status:data.status}),data.note || null]
     );
+    if (data.status === "verified") {
+      await queueInAppNotification(client,payment.customer_id,"invoice_updates","Paiement confirmé","Votre paiement a été vérifié et enregistré.","payment",data.id);
+    } else if (data.status === "refunded") {
+      await queueInAppNotification(client,payment.customer_id,"invoice_updates","Remboursement enregistré","Le remboursement de votre paiement a été enregistré par le garage.","payment",data.id);
+    }
     await client.query("COMMIT");
     return NextResponse.json({ ok: true, status: data.status });
   } catch (error) {
