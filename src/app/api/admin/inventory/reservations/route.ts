@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  if (!await requireStaff("storekeeper")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   try {
     await releaseExpiredStockReservations();
     const result = await query(
