@@ -24,6 +24,11 @@ const authModule = read("src/lib/auth.ts");
 const teamApi = read("src/app/api/admin/team/route.ts");
 const staffDashboard = read("src/app/equipe/page.tsx");
 const loginApi = read("src/app/api/auth/login/route.ts");
+const notificationHelper = read("src/lib/notifications.ts");
+const notificationApi = read("src/app/api/notifications/route.ts");
+const notificationPreferencesApi = read("src/app/api/notifications/preferences/route.ts");
+const notificationPage = read("src/app/compte/profil/notifications.tsx");
+
 
 const stockPage = read("src/app/admin/stocks/page.tsx");
 const referencePages = read("src/components/reference-pages.tsx");
@@ -202,4 +207,12 @@ assert.match(teamApi, /grant_staff_role/, "Les attributions de rôle doivent êt
 assert.match(teamApi, /revoke_staff_role/, "Les retraits de rôle doivent être audités.");
 assert.match(staffDashboard, /requireStaff/, "Les employés doivent disposer d’un espace adapté à leurs rôles.");
 assert.match(loginApi, /staffRoles/, "La connexion doit transmettre les rôles assignés pour rediriger l’employé.");
+assert.match(notificationHelper, /notification_preferences/, "Les notifications doivent respecter les préférences du client.");
+assert.match(notificationHelper, /channel,status,sent_at/, "Les alertes in-app doivent être enregistrées dans la boîte de réception.");
+assert.match(notificationApi, /WHERE id=\$1 AND user_id=\$2/, "Un utilisateur ne peut lire que ses propres notifications.");
+assert.match(notificationPreferencesApi, /ON CONFLICT\(user_id\) DO UPDATE/, "Les préférences doivent être modifiables de façon idempotente.");
+assert.match(notificationPage, /Enregistrer mes préférences/, "Le client doit pouvoir gérer ses préférences de notification.");
+assert.match(order, /queueInAppNotification/, "La création d’une commande doit notifier le client connecté.");
+assert.match(adminOrders, /queueInAppNotification/, "Les changements de commande doivent notifier le client.");
+assert.match(workshopPartsApi, /movement_type/, "La consommation atelier doit conserver son historique de stock.");
 console.log("Contrôles réussis : inventaire traçable, créneaux atelier protégés, paiements vérifiés, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
