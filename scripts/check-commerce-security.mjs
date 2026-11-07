@@ -137,6 +137,11 @@ const adminPayments = read("src/app/api/admin/payments/route.ts");
 assert.match(adminPayments, /SELECT id,user_id AS customer_id,total,currency,status FROM orders/, "Un paiement de commande doit utiliser la colonne user_id réelle de la base.");
 assert.match(adminPayments, /Le montant dépasse le solde restant dû/, "Un paiement ne doit pas dépasser le solde restant.");
 assert.match(adminPayments, /BEGIN/, "La création et la validation des paiements doivent être transactionnelles.");
+assert.match(adminPayments, /SELECT total,status FROM invoices WHERE id=\$1 FOR UPDATE/, "La validation doit verrouiller la facture avant de recalculer le solde.");
+assert.match(adminPayments, /SELECT total,status FROM orders WHERE id=\$1 FOR UPDATE/, "La validation doit verrouiller la commande avant de recalculer le solde.");
+assert.match(adminPayments, /validation dépasserait le solde/, "La validation d’un paiement doit prévenir le dépassement concurrent.");
+assert.match(adminPayments, /paid_at=CASE WHEN \$1='verified'/, "La date de paiement doit être enregistrée lors de la vérification.");
+
 assert.match(referencePages, /return <main className=\{"ref-page ref-"\+page\.style\}>\s*<div className="ref-container">\s*\{contactSent&&/, "La confirmation de contact doit apparaître sur la vraie page après envoi.");
 assert.match(adminProducts, /minimum_stock/ , "La fiche produit doit enregistrer un seuil minimum.");
 assert.match(adminProducts, /purchase_price/, "La fiche produit doit enregistrer le prix d’achat.");
