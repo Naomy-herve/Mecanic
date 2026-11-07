@@ -95,4 +95,14 @@ for (const [name, source] of [["inscription", register], ["connexion", login]]) 
   assert.match(source, /z\.email\(\)\.max\(254\)/, "L'e-mail doit être validé : " + name + ".");
 }
 
-console.log("Contrôles réussis : catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
+
+const productImport = read("src/app/api/admin/products/import/route.ts");
+assert.match(adminProducts, /INSERT INTO inventory_movements/, "La création d'une pièce doit tracer son stock initial.");
+assert.match(adminProducts, /FOR UPDATE/, "La fiche produit doit verrouiller la ligne avant modification.");
+assert.match(adminProducts, /Le stock ne se modifie pas depuis la fiche produit/, "La modification de fiche ne doit pas contourner l'historique du stock.");
+assert.match(adminProducts, /INSERT INTO audit_logs/, "Les changements de fiche produit doivent être audités.");
+assert.match(productImport, /INSERT INTO inventory_movements/, "L'import CSV doit tracer les stocks initiaux.");
+assert.match(productImport, /INSERT INTO audit_logs/, "L'import CSV doit alimenter le journal d'audit.");
+assert.match(adminProductsPage, /readOnly/, "Le stock doit être en lecture seule lors de la modification d'une fiche.");
+
+console.log("Contrôles réussis : inventaire traçable, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
