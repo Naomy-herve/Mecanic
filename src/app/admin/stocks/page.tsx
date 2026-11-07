@@ -40,7 +40,7 @@ export default function StockPage(){
 
  async function countStock(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();if(busy)return;setBusy(true);setError("");setSuccess("");
-  const f=new FormData(e.currentTarget);
+  const form=e.currentTarget;const f=new FormData(form);
   try{
    const r=await fetch("/api/admin/inventory/counts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({productId:countProductId,countedQuantity:f.get("countedQuantity"),reason:f.get("countReason")})});
    const d=await r.json();if(!r.ok)throw new Error(d.error||"Inventaire impossible.");
