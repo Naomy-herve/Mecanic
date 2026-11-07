@@ -41,11 +41,14 @@ assert.match(orders, /FOR UPDATE/, "Les lignes produit doivent être verrouillé
 assert.match(orders, /stock_quantity=stock_quantity-\$1/, "Le stock doit être décrémenté côté serveur.");
 assert.match(orders, /product\.price/, "Le total doit être calculé à partir des prix de la base.");
 assert.match(orders, /ROLLBACK/, "Une erreur doit annuler la transaction.");
+assert.match(orders, /INSERT INTO inventory_movements/, "Chaque vente doit être inscrite dans l’historique des stocks.");
 assert.match(orders, /currency !== currency/, "Les devises mixtes doivent être refusées.");
 
 assert.match(customerOrders, /getSession\(\)/, "L'historique exige une session.");
 assert.match(customerOrders, /WHERE o\.user_id = \$1/, "Un client ne peut lire que ses propres commandes.");
 assert.match(adminOrders, /requireAdmin\(\)/, "La gestion des commandes est réservée aux administrateurs.");
+assert.match(adminOrders, /movement_type,quantity,reason,reference_type,reference_id/, "L’annulation d’une commande doit tracer le retour au stock.");
+assert.match(adminOrders, /INSERT INTO audit_logs/, "Les transitions de commande doivent être auditées.");
 assert.match(adminProducts, /requireAdmin\(\)/, "La gestion des produits est réservée aux administrateurs.");
 assert.match(adminVehiclesApi, /requireAdmin\(\)/, "La gestion des véhicules est réservée aux administrateurs.");
 assert.match(adminVehiclesApi, /yearTo<d\.yearFrom/, "L’API doit refuser une plage d’années inversée.");
