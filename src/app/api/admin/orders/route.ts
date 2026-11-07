@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { db, query } from "@/lib/db";
 import { releaseExpiredStockReservations } from "@/lib/inventory";
 
@@ -19,7 +19,7 @@ const allowed: Record<string, string[]> = {
 };
 
 export async function GET() {
-  if (!await requireAdmin()) {
+  if (!await requireStaff("seller","accountant")) {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
 
@@ -35,7 +35,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const actor = await requireAdmin();
+  const actor = await requireStaff("seller","accountant");
   if (!actor) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
 
   let client: import("pg").PoolClient | undefined;
