@@ -42,11 +42,11 @@ export default function WorkshopPage(){
 
  async function create(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();setBusy(true);setError("");setSuccess("");
-  const f=new FormData(e.currentTarget);
+  const form=e.currentTarget;const f=new FormData(form);
   try{
    const r=await fetch("/api/admin/workshop/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jobNumber:f.get("jobNumber"),symptoms:f.get("symptoms"),odometerKm:f.get("odometerKm")||null})});
    const d=await r.json();if(!r.ok)throw new Error(d.error||"Création impossible.");
-   e.currentTarget.reset();setSuccess("Dossier atelier créé.");await load();
+   form.reset();setSuccess("Dossier atelier créé.");await load();
   }catch(e){setError(e instanceof Error?e.message:"Création impossible.");}
   finally{setBusy(false);}
  }
