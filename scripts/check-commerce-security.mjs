@@ -19,6 +19,7 @@ const cartPage = read("src/app/panier/page.tsx");
 const cartStorage = read("src/lib/cart.ts");
 const addToCart = read("src/components/add-to-cart.tsx");
 const adminMetrics = read("src/app/api/admin/metrics/route.ts");
+const stockPage = read("src/app/admin/stocks/page.tsx");
 const referencePages = read("src/components/reference-pages.tsx");
 const homePage = read("src/app/page.tsx");
 const inquiries = read("src/app/api/inquiries/route.ts");
@@ -47,7 +48,7 @@ assert.doesNotMatch(orders, /stock_quantity=stock_quantity-\$1/, "Une commande e
 assert.match(orders, /INSERT INTO stock_reservations/, "Chaque ligne de commande doit créer une réservation.");
 assert.match(orders, /interval '24 hours'/, "Les réservations de commande doivent expirer automatiquement après 24 heures.");
 assert.match(orders, /SELECT id FROM garages WHERE is_active=true/, "Les commandes doivent être rattachées au garage unique.");
-assert.match(orders, /WITH expired AS/, "Les réservations expirées doivent être libérées avant une nouvelle commande.");
+assert.match(orders, /releaseExpiredStockReservations\(\)/, "Les réservations expirées doivent être libérées avant une nouvelle commande.");
 
 assert.match(orders, /product\.price/, "Le total doit être calculé à partir des prix de la base.");
 assert.match(orders, /ROLLBACK/, "Une erreur doit annuler la transaction.");
@@ -132,7 +133,6 @@ assert.match(singleGarageMigration, /'MGA'/, "La devise par défaut du garage do
 assert.match(adminOrders, /stock_quantity=stock_quantity-\$1,reserved_quantity=reserved_quantity-\$1/, "La confirmation doit débiter le stock physique et le réservé ensemble.");
 assert.match(adminOrders, /expires_at/, "La confirmation doit refuser une réservation expirée.");
 const inventoryCountsApi = read("src/app/api/admin/inventory/counts/route.ts");
-const stockPage = read("src/app/admin/stocks/page.tsx");
 assert.match(inventoryCountsApi, /data\.countedQuantity\s*-\s*before/, "L’inventaire physique doit calculer l’écart par rapport au stock système.");
 assert.match(inventoryCountsApi, /movement_type,quantity,reason,reference_type/, "Les écarts d’inventaire doivent être tracés comme ajustements.");
 assert.match(inventoryCountsApi, /countedQuantity < Number\(current\.rows\[0\]\.reserved_quantity\)/, "Le comptage physique ne doit pas descendre sous le stock réservé.");
