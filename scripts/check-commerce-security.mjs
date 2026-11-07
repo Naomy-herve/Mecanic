@@ -108,4 +108,8 @@ assert.match(adminProductsPage, /readOnly/, "Le stock doit être en lecture seul
 
 const adminAppointments = read("src/app/api/admin/appointments/route.ts");
 assert.match(adminAppointments, /pg_advisory_xact_lock/, "Les réservations d’un même mécanicien doivent être sérialisées pour empêcher les doubles créneaux.");
-console.log("Contrôles réussis : inventaire traçable, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
+const adminPayments = read("src/app/api/admin/payments/route.ts");
+assert.match(adminPayments, /SELECT id,customer_id,total,currency,status FROM orders/, "Un paiement de commande doit retrouver son client et sa devise.");
+assert.match(adminPayments, /Le montant dépasse le solde restant dû/, "Un paiement ne doit pas dépasser le solde restant.");
+assert.match(adminPayments, /BEGIN/, "La création et la validation des paiements doivent être transactionnelles.");
+console.log("Contrôles réussis : inventaire traçable, créneaux atelier protégés, paiements vérifiés, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
