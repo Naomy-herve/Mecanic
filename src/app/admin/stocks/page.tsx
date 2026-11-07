@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useState} from "react";
 
-type Product={id:string;sku:string;name:string;stock_quantity:number;currency:string};
+type Product={id:string;sku:string;name:string;stock_quantity:number;reserved_quantity:number;currency:string};
 type Movement={id:string;movement_type:string;quantity:number;reason:string;created_at:string;sku:string;name:string};
 const labels:Record<string,string>={receipt:"Réception",sale:"Vente",return:"Retour",damage:"Endommagé",loss:"Perte",adjustment:"Ajustement",repair_use:"Utilisation atelier"};
 
@@ -59,7 +59,7 @@ export default function StockPage(){
    <h2>Enregistrer un mouvement</h2>
    {!products.length&&!loading&&<p className="muted">Ajoutez d’abord les références réelles dans la gestion des produits.</p>}
    <form onSubmit={submit}>
-    <div className="field"><label htmlFor="stock-product">Pièce</label><select id="stock-product" name="productId" required defaultValue=""><option value="" disabled>Choisir une pièce</option>{products.map(p=><option key={p.id} value={p.id}>{p.sku} — {p.name} (stock : {p.stock_quantity})</option>)}</select></div>
+    <div className="field"><label htmlFor="stock-product">Pièce</label><select id="stock-product" name="productId" required defaultValue=""><option value="" disabled>Choisir une pièce</option>{products.map(p=><option key={p.id} value={p.id}>{p.sku} — {p.name} (disponible : {Math.max(0,p.stock_quantity-p.reserved_quantity)} / réservé : {p.reserved_quantity})</option>)}</select></div>
     <div className="field"><label htmlFor="stock-type">Type de mouvement</label><select id="stock-type" name="movementType" defaultValue="receipt">{Object.entries(labels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
     <div className="form-grid">
      <div className="field"><label htmlFor="stock-quantity">Quantité</label><input id="stock-quantity" name="quantity" type="number" min="1" required/></div>
@@ -75,7 +75,7 @@ export default function StockPage(){
    <h2>Inventaire physique et correction des écarts</h2>
    <p className="muted">Saisissez la quantité réellement comptée. L’application calcule l’écart, ajuste le stock et conserve une écriture corrective dans l’historique.</p>
    <form onSubmit={countStock}>
-    <div className="field"><label htmlFor="count-product">Pièce comptée</label><select id="count-product" value={countProductId} onChange={e=>setCountProductId(e.target.value)} required><option value="">Choisir une pièce</option>{products.map(p=><option key={p.id} value={p.id}>{p.sku} — {p.name} (stock système : {p.stock_quantity})</option>)}</select></div>
+    <div className="field"><label htmlFor="count-product">Pièce comptée</label><select id="count-product" value={countProductId} onChange={e=>setCountProductId(e.target.value)} required><option value="">Choisir une pièce</option>{products.map(p=><option key={p.id} value={p.id}>{p.sku} — {p.name} (stock physique : {p.stock_quantity} / réservé : {p.reserved_quantity})</option>)}</select></div>
     <div className="field"><label htmlFor="count-quantity">Quantité réellement comptée</label><input id="count-quantity" name="countedQuantity" type="number" min="0" step="1" required/></div>
     <div className="field"><label htmlFor="count-reason">Motif / référence du comptage</label><input id="count-reason" name="countReason" required minLength={3} maxLength={500} placeholder="Inventaire physique du magasin"/></div>
     <button className="btn btn-primary" disabled={busy||!countProductId}>{busy?"Validation…":"Valider le comptage physique"}</button>
