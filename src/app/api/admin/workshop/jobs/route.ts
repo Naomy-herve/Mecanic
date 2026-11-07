@@ -17,16 +17,22 @@ const createSchema = z.object({
 const updateSchema = z.object({
   id: z.uuid(),
   status: z.enum(["received","diagnosis","quote_pending","approved","in_repair","quality_check","completed","delivered","cancelled"]),
-  note: z.string().trim().max(2000).optional(),
+  diagnosis: z.string().trim().max(5000).optional(),
+  recommendations: z.string().trim().max(5000).optional(),
+  internalNotes: z.string().trim().max(3000).optional(),
+  customerApprovalNote: z.string().trim().max(1000).optional(),
 });
 
 export async function GET() {
   if (!await requireStaff("mechanic","seller")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   try {
-    const result = await query(
-      "SELECT j.id,j.job_number,j.status,j.received_at,j.estimated_completion_at,j.symptoms,j.diagnosis,j.recommendations,j.odometer_km,j.customer_approval_at,u.full_name AS customer_name,cv.make,cv.model,cv.model_year,cv.registration_number,me.full_name AS mechanic_name FROM workshop_jobs j LEFT JOIN users u ON u.id=j.customer_id LEFT JOIN customer_vehicles cv ON cv.id=j.customer_vehicle_id LEFT JOIN users me ON me.id=j.assigned_mechanic_id ORDER BY j.created_at DESC LIMIT 200"
-    );
-    return NextResponse.json({ jobs: result.rows });
+    const [result,mechanics,customers,vehicles] = await Promise.all([
+      query("SELECT j.id,j.job_number,j.status,j.received_at,j.estimated_completion_at,j.symptoms,j.diagnosis,j.recommendations,j.odometer_km,j.customer_approval_at,j.customer_approval_note,j.internal_notes,j.assigned_mechanic_id,u.full_name AS customer_name,j.customer_id,cv.make,cv.model,cv.model_year,cv.registration_number,me.full_name AS mechanic_name FROM workshop_jobs j LEFT JOIN users u ON u.id=j.customer_id LEFT JOIN customer_vehicles cv ON cv.id=j.customer_vehicle_id LEFT JOIN users me ON me.id=j.assigned_mechanic_id ORDER BY j.created_at DESC LIMIT 200"),
+      query("SELECT u.id,u.full_name FROM users u JOIN user_role_assignments ura ON ura.user_id=u.id JOIN garages g ON g.id=ura.garage_id AND g.is_active=true WHERE ura.role='mechanic' ORDER BY u.full_name"),
+      query("SELECT id,full_name,email FROM users WHERE role='customer' ORDER BY full_name LIMIT 500"),
+      query("SELECT cv.id,cv.customer_id AS user_id,cv.make,cv.model,cv.registration_number FROM customer_vehicles cv ORDER BY cv.created_at DESC LIMIT 500")
+    ]);
+    return NextResponse.json({ jobs: result.rows, mechanics: mechanics.rows, customers: customers.rows, vehicles: vehicles.rows });
   } catch {
     return NextResponse.json({ error: "Chargement des dossiers atelier impossible." }, { status: 500 });
   }
@@ -40,6 +46,15 @@ export async function POST(req: Request) {
     const data = createSchema.parse(await req.json());
     client = await db.connect();
     await client.query("BEGIN");
+    if (data.customerVehicleId) {
+      if (!data.customerId) { await client.query("ROLLBACK"); return NextResponse.json({ error: "Sélectionnez le client associé au véhicule." }, { status: 400 }); }
+      const vehicle = await client.query("SELECT id FROM customer_vehicles WHERE id=$1 AND customer_id=$2 FOR SHARE", [data.customerVehicleId,data.customerId]);
+      if (!vehicle.rowCount) { await client.query("ROLLBACK"); return NextResponse.json({ error: "Ce véhicule n’appartient pas au client sélectionné." }, { status: 404 }); }
+    }
+    if (data.assignedMechanicId) {
+      const assigned = await client.query("SELECT 1 FROM user_role_assignments ura JOIN garages g ON g.id=ura.garage_id AND g.is_active=true WHERE ura.user_id=$1 AND ura.role='mechanic' LIMIT 1", [data.assignedMechanicId]);
+      if (!assigned.rowCount) { await client.query("ROLLBACK"); return NextResponse.json({ error: "Le compte sélectionné n’a pas le rôle mécanicien dans ce garage." }, { status: 400 }); }
+    }
     const inserted = await client.query(
       "INSERT INTO workshop_jobs(job_number,customer_id,customer_vehicle_id,odometer_km,intake_condition,symptoms,assigned_mechanic_id,estimated_completion_at,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,job_number,status,received_at",
       [data.jobNumber,data.customerId || null,data.customerVehicleId || null,data.odometerKm ?? null,data.intakeCondition || null,data.symptoms,data.assignedMechanicId || null,data.estimatedCompletionAt || null,actor.id]
@@ -62,7 +77,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const actor = await requireStaff("mechanic","seller");
+  const actor = await requireStaff("mechanic");
   if (!actor) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   let client: import("pg").PoolClient | undefined;
   try {
@@ -86,8 +101,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Transition de statut non autorisée." }, { status: 409 });
     }
     const updated = await client.query(
-      "UPDATE workshop_jobs SET status=$1,diagnosis=CASE WHEN $1='diagnosis' AND $2<>'' THEN $2 ELSE diagnosis END,customer_approval_at=CASE WHEN $1='approved' THEN now() ELSE customer_approval_at END,completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,delivered_at=CASE WHEN $1='delivered' THEN now() ELSE delivered_at END,updated_at=now() WHERE id=$3 RETURNING id,job_number,status",
-      [data.status,data.note || "",data.id]
+      "UPDATE workshop_jobs SET status=$1,diagnosis=COALESCE(NULLIF($2,''),diagnosis),recommendations=COALESCE(NULLIF($3,''),recommendations),internal_notes=COALESCE(NULLIF($4,''),internal_notes),customer_approval_note=CASE WHEN $1='approved' THEN NULLIF($5,'') ELSE customer_approval_note END,customer_approval_at=CASE WHEN $1='approved' THEN now() ELSE customer_approval_at END,completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,delivered_at=CASE WHEN $1='delivered' THEN now() ELSE delivered_at END,updated_at=now() WHERE id=$6 RETURNING id,job_number,status",
+      [data.status,data.diagnosis || "",data.recommendations || "",data.internalNotes || "",data.customerApprovalNote || "",data.id]
     );
     await client.query(
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'status_change','workshop_job',$2,$3::jsonb,$4::jsonb,$5)",
