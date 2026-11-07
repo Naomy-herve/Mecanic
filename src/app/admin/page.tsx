@@ -86,6 +86,7 @@ export default async function Admin(){
    <Link className="btn btn-outline" href="/admin/rendez-vous">Rendez-vous</Link>
    <Link className="btn btn-outline" href="/admin/stocks">Inventaire et réservations</Link>
    <Link className="btn btn-outline" href="/admin/fournisseurs">Fournisseurs et achats</Link>
+   <Link className="btn btn-outline" href="/admin/equipe">Équipe et permissions</Link>
   </div>
   <h2>Commandes récentes</h2>
   <div className="table-wrap"><table><thead><tr><th>Commande</th><th>Client</th><th>Total</th><th>Statut</th><th>Date</th></tr></thead><tbody>
