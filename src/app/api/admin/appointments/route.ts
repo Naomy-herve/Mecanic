@@ -37,6 +37,8 @@ export async function POST(req: Request) {
     client = await db.connect();
     await client.query("BEGIN");
     if (data.mechanicId && data.scheduledStart && data.scheduledEnd) {
+      // Serialize bookings for this mechanic; row locks alone do not protect an empty time range.
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1)::bigint)", [data.mechanicId]);
       const conflict = await client.query(
         "SELECT id FROM appointments WHERE assigned_mechanic_id=$1 AND status IN ('requested','confirmed','in_progress') AND scheduled_start < $3 AND scheduled_end > $2 FOR UPDATE",
         [data.mechanicId,data.scheduledStart,data.scheduledEnd]
