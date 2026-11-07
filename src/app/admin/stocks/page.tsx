@@ -29,11 +29,11 @@ export default function StockPage(){
 
  async function submit(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();if(busy)return;setBusy(true);setError("");setSuccess("");
-  const f=new FormData(e.currentTarget);
+  const form=e.currentTarget;const f=new FormData(form);
   try{
    const r=await fetch("/api/admin/inventory/movements",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({productId:f.get("productId"),movementType:f.get("movementType"),quantity:f.get("quantity"),unitCost:f.get("unitCost")||null,reason:f.get("reason"),documentNumber:f.get("documentNumber")})});
    const d=await r.json();if(!r.ok)throw new Error(d.error||"Mouvement impossible.");
-   setSuccess("Mouvement enregistré. Nouveau stock : "+d.stockQuantity);e.currentTarget.reset();await load();
+   setSuccess("Mouvement enregistré. Nouveau stock : "+d.stockQuantity);form.reset();await load();
   }catch(e){setError(e instanceof Error?e.message:"Mouvement impossible.");}
   finally{setBusy(false);}
  }
@@ -45,7 +45,7 @@ export default function StockPage(){
    const r=await fetch("/api/admin/inventory/counts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({productId:countProductId,countedQuantity:f.get("countedQuantity"),reason:f.get("countReason")})});
    const d=await r.json();if(!r.ok)throw new Error(d.error||"Inventaire impossible.");
    setSuccess(d.difference===0?"Inventaire validé : aucun écart.":"Inventaire validé : écart de "+(d.difference>0?"+":"")+d.difference+" unité(s).");
-   e.currentTarget.reset();await load();
+   form.reset();await load();
   }catch(e){setError(e instanceof Error?e.message:"Inventaire impossible.");}
   finally{setBusy(false);}
  }
