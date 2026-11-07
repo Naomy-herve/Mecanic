@@ -70,11 +70,11 @@ assert.match(orders, /currency !== currency/, "Les devises mixtes doivent être 
 
 assert.match(customerOrders, /getSession\(\)/, "L'historique exige une session.");
 assert.match(customerOrders, /WHERE o\.user_id = \$1/, "Un client ne peut lire que ses propres commandes.");
-assert.match(adminOrders, /requireAdmin\(\)/, "La gestion des commandes est réservée aux administrateurs.");
+assert.match(adminOrders, /requireStaff\("seller","accountant"\)/, "Les commandes sont accessibles aux vendeurs et comptables autorisés.");
 assert.match(adminOrders, /movement_type,quantity,reason,reference_type,reference_id/, "L’annulation d’une commande doit tracer le retour au stock.");
 assert.match(adminOrders, /INSERT INTO audit_logs/, "Les transitions de commande doivent être auditées.");
 assert.match(adminProducts, /requireAdmin\(\)/, "La gestion des produits est réservée aux administrateurs.");
-assert.match(adminVehiclesApi, /requireAdmin\(\)/, "La gestion des véhicules est réservée aux administrateurs.");
+assert.match(adminVehiclesApi, /requireStaff\("mechanic","seller"\)/, "Les véhicules sont accessibles aux mécaniciens et vendeurs autorisés.");
 assert.match(adminVehiclesApi, /yearTo<d\.yearFrom/, "L’API doit refuser une plage d’années inversée.");
 assert.match(adminVehiclesApi, /Ce véhicule existe déjà/, "L’API doit prévenir les doublons de véhicules.");
 assert.match(adminVehicles, /setSaving\(true\)/, "Le formulaire véhicule doit empêcher les doubles soumissions.");
