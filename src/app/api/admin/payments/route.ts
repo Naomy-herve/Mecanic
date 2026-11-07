@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db, query } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 
 const createSchema = z.object({
   invoiceId: z.uuid().nullable().optional(),
@@ -21,7 +21,7 @@ const updateSchema = z.object({
 });
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  if (!await requireStaff("seller","accountant")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   try {
     const result = await query(
       "SELECT p.*,u.full_name AS customer_name,i.invoice_number,o.order_number FROM payments p LEFT JOIN users u ON u.id=p.customer_id LEFT JOIN invoices i ON i.id=p.invoice_id LEFT JOIN orders o ON o.id=p.order_id ORDER BY p.created_at DESC LIMIT 300"
@@ -33,7 +33,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const actor = await requireAdmin();
+  const actor = await requireStaff("seller","accountant");
   if (!actor) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   let client: import("pg").PoolClient | undefined;
   try {
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const actor = await requireAdmin();
+  const actor = await requireStaff("accountant");
   if (!actor) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   let client: import("pg").PoolClient | undefined;
   try {
