@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db, query } from "@/lib/db";
 import { requireStaff } from "@/lib/auth";
+import { queueInAppNotification } from "@/lib/notifications";
 
 const schema = z.object({
   customerId: z.uuid().nullable().optional(),
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_data) VALUES($1,'create','appointment',$2,$3::jsonb)",
       [actor.id,inserted.rows[0].id,JSON.stringify(inserted.rows[0])]
     );
+    await queueInAppNotification(client,data.customerId,"appointment_reminders","Rendez-vous enregistré",data.scheduledStart?"Votre rendez-vous est confirmé pour le créneau choisi.":"Votre demande de rendez-vous a été reçue et attend une confirmation.","appointment",inserted.rows[0].id);
     await client.query("COMMIT");
     return NextResponse.json({ appointment: inserted.rows[0] }, { status: 201 });
   } catch (error) {
