@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - kia-piece-dev
+      - kia-piece-guide-execution
   pull_request:
     branches:
       - kia-piece-dev
