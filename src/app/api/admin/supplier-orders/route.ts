@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db, query } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 
 const createSchema = z.object({
   supplierId: z.uuid(),
@@ -29,7 +29,7 @@ const updateSchema = z.discriminatedUnion("action", [
 ]);
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  if (!await requireStaff("storekeeper")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   try {
     const result = await query(
       `SELECT so.id,so.order_number,so.status,so.ordered_at,so.expected_at,so.received_at,so.currency,so.subtotal,so.notes,s.name AS supplier_name,
@@ -45,7 +45,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const actor = await requireAdmin();
+  const actor = await requireStaff("storekeeper");
   if (!actor) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   let client: import("pg").PoolClient | undefined;
   try {
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const actor = await requireAdmin();
+  const actor = await requireStaff("storekeeper");
   if (!actor) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   let client: import("pg").PoolClient | undefined;
   try {
