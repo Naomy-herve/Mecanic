@@ -104,6 +104,8 @@ assert.match(adminProducts, /Le stock ne se modifie pas depuis la fiche produit/
 assert.match(adminProducts, /INSERT INTO audit_logs/, "Les changements de fiche produit doivent être audités.");
 assert.match(productImport, /INSERT INTO inventory_movements/, "L'import CSV doit tracer les stocks initiaux.");
 assert.match(productImport, /INSERT INTO audit_logs/, "L'import CSV doit alimenter le journal d'audit.");
+assert.match(productImport, /minimum_stock,purchase_price,tax_rate,warranty_months,origin/, "L’import CSV doit prendre en charge les champs de gestion du catalogue.");
+assert.match(productImport, /unit_cost,reason,created_by/, "L’import CSV doit rattacher le coût d’achat au mouvement de stock.");
 assert.match(adminProductsPage, /readOnly/, "Le stock doit être en lecture seule lors de la modification d'une fiche.");
 
 const adminAppointments = read("src/app/api/admin/appointments/route.ts");
@@ -112,7 +114,7 @@ const adminPayments = read("src/app/api/admin/payments/route.ts");
 assert.match(adminPayments, /SELECT id,user_id AS customer_id,total,currency,status FROM orders/, "Un paiement de commande doit utiliser la colonne user_id réelle de la base.");
 assert.match(adminPayments, /Le montant dépasse le solde restant dû/, "Un paiement ne doit pas dépasser le solde restant.");
 assert.match(adminPayments, /BEGIN/, "La création et la validation des paiements doivent être transactionnelles.");
-assert.match(referencePages, /return <main className=\{"ref-page ref-"\+page\.style\}>\\s*<div className="ref-container">\\s*\{contactSent&&/, "La confirmation de contact doit apparaître sur la vraie page après envoi.");
+assert.match(referencePages, /return <main className=\{"ref-page ref-"\+page\.style\}>\s*<div className="ref-container">\s*\{contactSent&&/, "La confirmation de contact doit apparaître sur la vraie page après envoi.");
 assert.match(adminProducts, /minimum_stock/ , "La fiche produit doit enregistrer un seuil minimum.");
 assert.match(adminProducts, /purchase_price/, "La fiche produit doit enregistrer le prix d’achat.");
 assert.match(adminProductsPage, /name="purchasePrice"/, "Le formulaire administrateur doit exposer le prix d’achat.");
