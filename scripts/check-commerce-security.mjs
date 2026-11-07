@@ -106,4 +106,6 @@ assert.match(productImport, /INSERT INTO inventory_movements/, "L'import CSV doi
 assert.match(productImport, /INSERT INTO audit_logs/, "L'import CSV doit alimenter le journal d'audit.");
 assert.match(adminProductsPage, /readOnly/, "Le stock doit être en lecture seule lors de la modification d'une fiche.");
 
+const adminAppointments = read("src/app/api/admin/appointments/route.ts");
+assert.match(adminAppointments, /pg_advisory_xact_lock/, "Les réservations d’un même mécanicien doivent être sérialisées pour empêcher les doubles créneaux.");
 console.log("Contrôles réussis : inventaire traçable, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
