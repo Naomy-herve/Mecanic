@@ -44,19 +44,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Un administrateur est déjà configuré. Connectez-vous depuis l’espace client." }, { status: 409 });
     }
 
+    const garageResult = await client.query("SELECT id FROM garages WHERE is_active=true LIMIT 1 FOR SHARE");
+    if (!garageResult.rowCount) {
+      await client.query("ROLLBACK");
+      return NextResponse.json({ error: "Le garage KIA PIÈCE n’est pas encore configuré." }, { status: 503 });
+    }
+    const garageId = garageResult.rows[0].id;
+
     const passwordHash = await bcrypt.hash(data.password, 12);
     const existingUser = await client.query("SELECT id FROM users WHERE lower(email)=$1 LIMIT 1", [configuredEmail]);
     let user;
     if (existingUser.rowCount) {
       const updated = await client.query(
-        "UPDATE users SET full_name=$1,email=$2,password_hash=$3,role='admin',updated_at=now() WHERE id=$4 RETURNING id,full_name,email,role",
-        [data.fullName, configuredEmail, passwordHash, existingUser.rows[0].id]
+        "UPDATE users SET full_name=$1,email=$2,password_hash=$3,role='admin',garage_id=$4,updated_at=now() WHERE id=$5 RETURNING id,full_name,email,role",
+        [data.fullName, configuredEmail, passwordHash, garageId, existingUser.rows[0].id]
       );
       user = updated.rows[0];
     } else {
       const inserted = await client.query(
-        "INSERT INTO users(full_name,email,password_hash,role) VALUES($1,$2,$3,'admin') RETURNING id,full_name,email,role",
-        [data.fullName, configuredEmail, passwordHash]
+        "INSERT INTO users(full_name,email,password_hash,role,garage_id) VALUES($1,$2,$3,'admin',$4) RETURNING id,full_name,email,role",
+        [data.fullName, configuredEmail, passwordHash, garageId]
       );
       user = inserted.rows[0];
     }

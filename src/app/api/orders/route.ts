@@ -3,6 +3,8 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
+import { queueInAppNotification } from "@/lib/notifications";
 
 const schema = z.object({
   items: z.array(z.object({
@@ -40,12 +42,13 @@ export async function POST(req: Request) {
     const customerEmail = user?.email || data.customerEmail;
     const customerName = user?.fullName || data.customerName;
 
+    await releaseExpiredStockReservations();
     client = await db.connect();
     await client.query("BEGIN");
 
     const ids = normalizedItems.map(item => item.productId);
     const locked = await client.query(
-      "SELECT id,sku,name,price,currency,stock_quantity FROM products WHERE id=ANY($1::uuid[]) AND is_active=true FOR UPDATE",
+      "SELECT id,sku,name,price,currency,stock_quantity,reserved_quantity,purchase_price FROM products WHERE id=ANY($1::uuid[]) AND is_active=true FOR UPDATE",
       [ids]
     );
 
@@ -57,8 +60,8 @@ export async function POST(req: Request) {
     let subtotal = 0;
     const rows = normalizedItems.map(item => {
       const product = byId.get(item.productId);
-      if (!product || product.stock_quantity < item.quantity) {
-        throw new OrderValidationError("Stock insuffisant pour " + (product?.name || "une pièce") + ".");
+      if (!product || Number(product.stock_quantity) - Number(product.reserved_quantity) < item.quantity) {
+        throw new OrderValidationError("Stock disponible insuffisant pour " + (product?.name || "une pièce") + ".");
       }
       const unit = Number(product.price);
       subtotal += unit * item.quantity;
@@ -70,20 +73,13 @@ export async function POST(req: Request) {
       throw new OrderValidationError("Le panier contient plusieurs devises.");
     }
 
-    for (const item of rows) {
-      const updated = await client.query(
-        "UPDATE products SET stock_quantity=stock_quantity-$1,updated_at=now() WHERE id=$2 AND stock_quantity >= $1",
-        [item.quantity, item.productId]
-      );
-      if (!updated.rowCount) {
-        throw new OrderValidationError("Stock modifié. Veuillez actualiser votre panier.");
-      }
-    }
+    const garage = await client.query("SELECT id FROM garages WHERE is_active=true LIMIT 1 FOR SHARE");
+    if (!garage.rowCount) throw new OrderValidationError("Le garage KIA PIÈCE n’est pas configuré.");
 
     const orderNumber = "KP-" + new Date().toISOString().slice(0, 10).replaceAll("-", "") + "-" + randomUUID().slice(0, 6).toUpperCase();
     const inserted = await client.query(
-      "INSERT INTO orders(order_number,user_id,customer_name,customer_email,customer_phone,shipping_address,subtotal,shipping_fee,total,currency,notes) VALUES($1,$2,$3,$4,$5,$6,$7,0,$7,$8,$9) RETURNING id,order_number,total,currency",
-      [orderNumber, user?.id || null, customerName, customerEmail, data.customerPhone, JSON.stringify(data.shippingAddress), subtotal, currency, data.notes || null]
+      "INSERT INTO orders(order_number,user_id,customer_name,customer_email,customer_phone,shipping_address,subtotal,shipping_fee,total,currency,notes,garage_id) VALUES($1,$2,$3,$4,$5,$6,$7,0,$7,$8,$9,$10) RETURNING id,order_number,total,currency",
+      [orderNumber, user?.id || null, customerName, customerEmail, data.customerPhone, JSON.stringify(data.shippingAddress), subtotal, currency, data.notes || null, garage.rows[0].id]
     );
 
     for (const item of rows) {
@@ -91,8 +87,21 @@ export async function POST(req: Request) {
         "INSERT INTO order_items(order_id,product_id,sku,product_name,quantity,unit_price,line_total) VALUES($1,$2,$3,$4,$5,$6,$7)",
         [inserted.rows[0].id, item.productId, item.product.sku, item.product.name, item.quantity, item.unit, item.line]
       );
+      await client.query(
+        "UPDATE products SET reserved_quantity=reserved_quantity+$1,updated_at=now() WHERE id=$2",
+        [item.quantity,item.productId]
+      );
+      await client.query(
+        "INSERT INTO stock_reservations(product_id,order_id,quantity,status,expires_at,created_by) VALUES($1,$2,$3,'reserved',now()+interval '24 hours',$4)",
+        [item.productId,inserted.rows[0].id,item.quantity,user?.id || null]
+      );
     }
+    await client.query(
+      "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_data,reason) VALUES($1,'create','order',$2,$3::jsonb,$4)",
+      [user?.id || null,inserted.rows[0].id,JSON.stringify(inserted.rows[0]),"Commande client enregistrée"]
+    );
 
+    await queueInAppNotification(client,user?.id,"order_updates","Commande enregistrée",`Votre commande ${inserted.rows[0].order_number} est enregistrée. Le garage doit la confirmer ; la réservation est temporaire pendant 24 heures.`,"order",inserted.rows[0].id);
     await client.query("COMMIT");
     return NextResponse.json({ order: inserted.rows[0] }, { status: 201 });
   } catch (error) {
