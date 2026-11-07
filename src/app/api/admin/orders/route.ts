@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { db, query } from "@/lib/db";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 const schema = z.object({
   id: z.uuid(),
@@ -23,6 +24,7 @@ export async function GET() {
   }
 
   try {
+    await releaseExpiredStockReservations();
     const result = await query(
       "SELECT id,order_number,customer_name,customer_email,customer_phone,status,total,currency,created_at FROM orders ORDER BY created_at DESC LIMIT 200"
     );
