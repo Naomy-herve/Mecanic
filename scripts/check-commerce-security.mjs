@@ -38,10 +38,15 @@ assert.match(equivalents, /p\.is_active\s*=\s*true/, "Les équivalences inactive
 
 assert.match(orders, /await client\.query\("BEGIN"\)/, "La commande doit être transactionnelle.");
 assert.match(orders, /FOR UPDATE/, "Les lignes produit doivent être verrouillées pendant la commande.");
-assert.match(orders, /stock_quantity=stock_quantity-\$1/, "Le stock doit être décrémenté côté serveur.");
+assert.match(orders, /stock_quantity\) - Number\(product\.reserved_quantity\)/, "Une commande ne doit utiliser que le stock non réservé.");
+assert.match(orders, /reserved_quantity=reserved_quantity\+\$1/, "Une commande en attente doit réserver les quantités.");
+assert.match(orders, /INSERT INTO stock_reservations/, "Chaque ligne de commande doit créer une réservation.");
+assert.match(orders, /interval '24 hours'/, "Les réservations de commande doivent expirer automatiquement après 24 heures.");
 assert.match(orders, /product\.price/, "Le total doit être calculé à partir des prix de la base.");
 assert.match(orders, /ROLLBACK/, "Une erreur doit annuler la transaction.");
-assert.match(orders, /INSERT INTO inventory_movements/, "Chaque vente doit être inscrite dans l’historique des stocks.");
+assert.match(adminOrders, /VALUES\(\$1,'sale'/, "La confirmation doit convertir la réservation en mouvement de vente.");
+assert.match(adminOrders, /status='consumed'/, "La confirmation doit consommer la réservation.");
+assert.match(adminOrders, /status='released'/, "L’annulation doit libérer ou restituer la réservation.");
 assert.match(orders, /currency !== currency/, "Les devises mixtes doivent être refusées.");
 
 assert.match(customerOrders, /getSession\(\)/, "L'historique exige une session.");
@@ -78,7 +83,7 @@ assert.match(cartStorage, /result\.length >= 30/, "Le panier doit limiter le nom
 assert.match(addToCart, /readCart\(\)/, "L’ajout au panier doit utiliser le stockage validé.");
 assert.match(productPage, /<AddToCart product=/, "La fiche produit doit permettre un ajout au panier.");
 assert.match(catalogue, /<AddToCart product=/, "Les cartes du catalogue doivent permettre un ajout au panier.");
-assert.match(productPage, /disabled=\{p\.stock_quantity<=0\}/, "Une pièce sans stock ne doit pas être ajoutée directement au panier.");
+assert.match(productPage, /disabled=\{p\.available_quantity<=0\}/, "Une pièce sans stock disponible ne doit pas être ajoutée au panier.");
 assert.match(cartPage, /aria-label=\{"Augmenter la quantité/, "Les contrôles de quantité doivent avoir des libellés accessibles.");
 assert.match(adminMetrics, /requireAdmin\(\)/, "Les indicateurs de gestion doivent être protégés.");
 assert.match(adminMetrics, /low_stock_products/, "Le stock faible doit provenir de la base.");
@@ -104,6 +109,8 @@ const singleGarageMigration = read("database/migrations/20261107_single_garage.s
 assert.match(singleGarageMigration, /garages_singleton_guard/, "La base doit empêcher la création d’un second garage.");
 assert.match(singleGarageMigration, /Indian\/Antananarivo/, "Le garage unique doit utiliser le fuseau horaire de Madagascar.");
 assert.match(singleGarageMigration, /'MGA'/, "La devise par défaut du garage doit être l’Ariary.");
+assert.match(adminOrders, /stock_quantity=stock_quantity-\$1,reserved_quantity=reserved_quantity-\$1/, "La confirmation doit débiter le stock physique et le réservé ensemble.");
+assert.match(adminOrders, /expires_at/, "La confirmation doit refuser une réservation expirée.");
 const inventoryCountsApi = read("src/app/api/admin/inventory/counts/route.ts");
 const stockPage = read("src/app/admin/stocks/page.tsx");
 assert.match(inventoryCountsApi, /data\.countedQuantity\s*-\s*before/, "L’inventaire physique doit calculer l’écart par rapport au stock système.");
