@@ -20,6 +20,11 @@ const cartStorage = read("src/lib/cart.ts");
 const addToCart = read("src/components/add-to-cart.tsx");
 const adminMetrics = read("src/app/api/admin/metrics/route.ts");
 const adminDashboard = read("src/app/admin/page.tsx");
+const authModule = read("src/lib/auth.ts");
+const teamApi = read("src/app/api/admin/team/route.ts");
+const staffDashboard = read("src/app/equipe/page.tsx");
+const loginApi = read("src/app/api/auth/login/route.ts");
+
 const stockPage = read("src/app/admin/stocks/page.tsx");
 const referencePages = read("src/components/reference-pages.tsx");
 const homePage = read("src/app/page.tsx");
@@ -191,4 +196,10 @@ assert.match(adminDashboard, /FROM payments WHERE status='verified'/, "Le tablea
 assert.match(adminDashboard, /stock_quantity-reserved_quantity/, "Le tableau de bord doit distinguer le stock disponible du stock physique.");
 assert.match(adminDashboard, /inventory_movements im/, "La marge estimée doit s’appuyer sur les coûts réellement enregistrés.");
 assert.match(adminDashboard, /href="\/admin\/depenses"/, "Le tableau de bord doit donner accès au suivi des dépenses.");
+assert.match(authModule, /user_role_assignments/, "Les accès internes doivent être vérifiés depuis les affectations du garage.");
+assert.match(authModule, /g\.is_active=true/, "Les rôles doivent être limités au garage actif unique.");
+assert.match(teamApi, /grant_staff_role/, "Les attributions de rôle doivent être auditées.");
+assert.match(teamApi, /revoke_staff_role/, "Les retraits de rôle doivent être audités.");
+assert.match(staffDashboard, /requireStaff/, "Les employés doivent disposer d’un espace adapté à leurs rôles.");
+assert.match(loginApi, /staffRoles/, "La connexion doit transmettre les rôles assignés pour rediriger l’employé.");
 console.log("Contrôles réussis : inventaire traçable, créneaux atelier protégés, paiements vérifiés, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
