@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { releaseExpiredStockReservations } from "@/lib/inventory";
+import { queueInAppNotification } from "@/lib/notifications";
 
 const schema = z.object({
   items: z.array(z.object({
@@ -100,6 +101,7 @@ export async function POST(req: Request) {
       [user?.id || null,inserted.rows[0].id,JSON.stringify(inserted.rows[0]),"Commande client enregistrée"]
     );
 
+    await queueInAppNotification(client,user?.id,"order_updates","Commande enregistrée",`Votre commande ${inserted.rows[0].order_number} est enregistrée. Le garage doit la confirmer ; la réservation est temporaire pendant 24 heures.`,"order",inserted.rows[0].id);
     await client.query("COMMIT");
     return NextResponse.json({ order: inserted.rows[0] }, { status: 201 });
   } catch (error) {
