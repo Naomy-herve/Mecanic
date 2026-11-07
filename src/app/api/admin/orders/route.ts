@@ -26,7 +26,7 @@ export async function GET() {
   try {
     await releaseExpiredStockReservations();
     const result = await query(
-      "SELECT id,order_number,customer_name,customer_email,customer_phone,status,total,currency,created_at FROM orders ORDER BY created_at DESC LIMIT 200"
+      "SELECT id,order_number,customer_name,customer_email,customer_phone,status,payment_status,total,currency,created_at FROM orders ORDER BY created_at DESC LIMIT 200"
     );
     return NextResponse.json({ orders: result.rows });
   } catch {
