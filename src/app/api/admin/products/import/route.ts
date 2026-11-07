@@ -13,6 +13,11 @@ const rowSchema=z.object({
  price:z.coerce.number().finite().nonnegative(),
  currency:z.enum(["MGA","EUR","USD"]),
  stockQuantity:z.coerce.number().int().nonnegative(),
+ minimumStock:z.coerce.number().int().nonnegative(),
+ purchasePrice:z.preprocess(value=>value===""||value===null?null:value,z.coerce.number().finite().nonnegative().nullable()),
+ taxRate:z.preprocess(value=>value===""||value===null?null:value,z.coerce.number().min(0).max(100).nullable()),
+ warrantyMonths:z.preprocess(value=>value===""||value===null?null:value,z.coerce.number().int().nonnegative().nullable()),
+ origin:z.string().trim().max(120),
  condition:z.enum(["new","used","refurbished"]),
  imageUrl:z.union([z.literal(""),z.string().url()]),
  manufacturer:z.string().max(120),
@@ -49,7 +54,7 @@ export async function POST(req:Request){
     const raw=Object.fromEntries(headers.map((h,j)=>[h,values[j].trim()]));
     const name=raw.name||"";const parsed=rowSchema.safeParse({
      sku:raw.sku,name,slug:raw.slug||slugify(name),description:raw.description||"",categorySlug:raw.categorySlug||"",
-     price:raw.price,currency:raw.currency,stockQuantity:raw.stockQuantity,condition:raw.condition||"new",
+     price:raw.price,currency:raw.currency,stockQuantity:raw.stockQuantity,minimumStock:raw.minimumStock||"0",purchasePrice:raw.purchasePrice||"",taxRate:raw.taxRate||"",warrantyMonths:raw.warrantyMonths||"",origin:raw.origin||"",condition:raw.condition||"new",
      imageUrl:raw.imageUrl||"",manufacturer:raw.manufacturer||"",manufacturerPartNumber:raw.manufacturerPartNumber||"",oemReference:raw.oemReference||""
     });
     if(!parsed.success){errors.push({line:i+1,message:"Données invalides : "+parsed.error.issues.map(x=>x.path.join(".")).join(", ")});continue;}
@@ -58,15 +63,15 @@ export async function POST(req:Request){
     try{
      const category= d.categorySlug ? await client.query("SELECT id FROM categories WHERE slug=$1 LIMIT 1",[d.categorySlug]) : {rows:[]};
      if(d.categorySlug&&!category.rows.length)throw new Error("Catégorie inconnue : "+d.categorySlug);
-     const result=await client.query("INSERT INTO products(sku,name,slug,description,category_id,price,currency,stock_quantity,condition,image_url,manufacturer,manufacturer_part_number,oem_reference) VALUES($1,$2,$3,$4,$5,$6,$7,0,$8,$9,$10,$11,$12) ON CONFLICT DO NOTHING RETURNING id",
-      [d.sku,d.name,d.slug,d.description,category.rows[0]?.id||null,d.price,d.currency,d.condition,d.imageUrl||null,d.manufacturer||null,d.manufacturerPartNumber||null,d.oemReference||null]);
+     const result=await client.query("INSERT INTO products(sku,name,slug,description,category_id,price,currency,stock_quantity,minimum_stock,purchase_price,tax_rate,warranty_months,origin,condition,image_url,manufacturer,manufacturer_part_number,oem_reference) VALUES($1,$2,$3,$4,$5,$6,$7,0,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) ON CONFLICT DO NOTHING RETURNING id",
+      [d.sku,d.name,d.slug,d.description,category.rows[0]?.id||null,d.price,d.currency,d.minimumStock,d.purchasePrice,d.taxRate,d.warrantyMonths,d.origin||null,d.condition,d.imageUrl||null,d.manufacturer||null,d.manufacturerPartNumber||null,d.oemReference||null]);
      if(!result.rowCount)throw new Error("SKU ou slug déjà utilisé ; aucune donnée existante n'a été modifiée.");
      const productId=result.rows[0].id;
      if(d.stockQuantity>0){
       await client.query("UPDATE products SET stock_quantity=$1 WHERE id=$2",[d.stockQuantity,productId]);
-      await client.query("INSERT INTO inventory_movements(product_id,movement_type,quantity,reason,created_by) VALUES($1,'receipt',$2,$3,$4)",[productId,d.stockQuantity,"Stock initial import CSV",actor.id]);
+      await client.query("INSERT INTO inventory_movements(product_id,movement_type,quantity,unit_cost,reason,created_by) VALUES($1,'receipt',$2,$3,$4,$5)",[productId,d.stockQuantity,d.purchasePrice,"Stock initial import CSV",actor.id]);
      }
-     await client.query("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_data,reason) VALUES($1,'create','product',$2,$3::jsonb,$4)",[actor.id,productId,JSON.stringify({sku:d.sku,initialStock:d.stockQuantity}),"Import CSV"]);
+     await client.query("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_data,reason) VALUES($1,'create','product',$2,$3::jsonb,$4)",[actor.id,productId,JSON.stringify({sku:d.sku,initialStock:d.stockQuantity,minimumStock:d.minimumStock,purchasePrice:d.purchasePrice,taxRate:d.taxRate,warrantyMonths:d.warrantyMonths,origin:d.origin}),"Import CSV"]);
      imported++;await client.query("RELEASE SAVEPOINT import_row");
     }catch(e){await client.query("ROLLBACK TO SAVEPOINT import_row");await client.query("RELEASE SAVEPOINT import_row");errors.push({line:i+1,message:e instanceof Error?e.message:"Erreur d'importation."});}
    }
