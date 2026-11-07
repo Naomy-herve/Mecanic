@@ -7,7 +7,7 @@ import ProductImageField from "./image-field";
 type Product = {
   id: string; sku: string; name: string; slug: string; description: string;
   category_id: string | null; price: string; currency: string; stock_quantity: number;
-  condition: string; image_url: string | null; manufacturer: string | null;
+  condition: string; image_url: string | null; manufacturer: string | null; minimum_stock: number; purchase_price: string | null; tax_rate: string | null; warranty_months: number | null; origin: string | null;
   manufacturer_part_number: string | null; oem_reference: string | null; is_active: boolean;
 };
 type Category = { id: string; name: string };
@@ -65,6 +65,11 @@ export default function AdminProducts() {
       sku: fields.get("sku"), name, slug, description: fields.get("description"),
       categoryId: fields.get("categoryId") || null, price: Number(fields.get("price")),
       currency: fields.get("currency"), stockQuantity: Number(fields.get("stockQuantity")),
+      minimumStock: Number(fields.get("minimumStock") || 0),
+      purchasePrice: String(fields.get("purchasePrice") || "").trim() ? Number(fields.get("purchasePrice")) : null,
+      taxRate: String(fields.get("taxRate") || "").trim() ? Number(fields.get("taxRate")) : null,
+      warrantyMonths: String(fields.get("warrantyMonths") || "").trim() ? Number(fields.get("warrantyMonths")) : null,
+      origin: fields.get("origin") || null,
       condition: fields.get("condition"), imageUrl: fields.get("imageUrl") || null,
       manufacturer: fields.get("manufacturer") || null,
       manufacturerPartNumber: fields.get("manufacturerPartNumber") || null,
@@ -151,6 +156,15 @@ export default function AdminProducts() {
             <div className="field"><label htmlFor="product-price">Prix</label><input id="product-price" name="price" type="number" min="0" step="0.01" key={(editing?.id || "new") + "price"} defaultValue={editing?.price || ""} required /></div>
             <div className="field"><label htmlFor="product-currency">Devise</label><select id="product-currency" name="currency" key={(editing?.id || "new") + "currency"} defaultValue={editing?.currency || "MGA"} required><option value="MGA">Ariary (MGA)</option><option value="EUR">Euro (EUR)</option><option value="USD">Dollar US (USD)</option></select></div>
           </div>
+          <div className="form-grid">
+            <div className="field"><label htmlFor="product-purchase-price">Prix d’achat (facultatif)</label><input id="product-purchase-price" name="purchasePrice" type="number" min="0" step="0.01" key={(editing?.id || "new") + "purchasePrice"} defaultValue={editing?.purchase_price ?? ""} /></div>
+            <div className="field"><label htmlFor="product-minimum-stock">Seuil minimum de stock</label><input id="product-minimum-stock" name="minimumStock" type="number" min="0" step="1" key={(editing?.id || "new") + "minimumStock"} defaultValue={editing?.minimum_stock ?? 0} required /></div>
+          </div>
+          <div className="form-grid">
+            <div className="field"><label htmlFor="product-tax-rate">Taux de taxe (%)</label><input id="product-tax-rate" name="taxRate" type="number" min="0" max="100" step="0.01" key={(editing?.id || "new") + "taxRate"} defaultValue={editing?.tax_rate ?? ""} /></div>
+            <div className="field"><label htmlFor="product-warranty">Garantie (mois)</label><input id="product-warranty" name="warrantyMonths" type="number" min="0" step="1" key={(editing?.id || "new") + "warrantyMonths"} defaultValue={editing?.warranty_months ?? ""} /></div>
+          </div>
+          <div className="field"><label htmlFor="product-origin">Origine / provenance</label><input id="product-origin" name="origin" key={(editing?.id || "new") + "origin"} defaultValue={editing?.origin || ""} maxLength={120} /></div>
           <div className="form-grid">
             <div className="field"><label htmlFor="product-stock">{editing ? "Stock actuel (lecture seule)" : "Stock initial"}</label><input id="product-stock" name="stockQuantity" type="number" min="0" step="1" key={(editing?.id || "new") + "stock"} defaultValue={editing?.stock_quantity ?? 0} required readOnly={!!editing} aria-describedby="product-stock-help" /><small id="product-stock-help" className="muted">{editing ? "Pour corriger le stock, utilisez les mouvements de stock afin de conserver une trace." : "Le stock initial sera automatiquement inscrit dans l’historique."}</small></div>
             <div className="field"><label htmlFor="product-condition">État</label><select id="product-condition" name="condition" key={(editing?.id || "new") + "condition"} defaultValue={editing?.condition || "new"}><option value="new">Neuf</option><option value="used">Occasion</option><option value="refurbished">Reconditionné</option></select></div>
