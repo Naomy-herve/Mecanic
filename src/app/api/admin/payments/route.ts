@@ -131,13 +131,16 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Paiement introuvable." }, { status: 404 });
     }
     const payment = result.rows[0];
-    if (payment.status !== "pending") {
-      if (payment.status === data.status) {
-        await client.query("COMMIT");
-        return NextResponse.json({ ok: true, status: data.status });
-      }
+    if (payment.status === data.status) {
+      await client.query("COMMIT");
+      return NextResponse.json({ ok: true, status: data.status });
+    }
+    const allowedTransition =
+      (payment.status === "pending" && ["verified","rejected"].includes(data.status)) ||
+      (payment.status === "verified" && data.status === "refunded");
+    if (!allowedTransition) {
       await client.query("ROLLBACK");
-      return NextResponse.json({ error: "Ce paiement a déjà été traité." }, { status: 409 });
+      return NextResponse.json({ error: "Cette transition de paiement est interdite." }, { status: 409 });
     }
 
     // Lock the accounting documents before recalculating balances. This serializes
