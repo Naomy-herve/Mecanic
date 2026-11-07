@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/auth";
 import { db, query } from "@/lib/db";
 import { releaseExpiredStockReservations } from "@/lib/inventory";
+import { queueInAppNotification } from "@/lib/notifications";
 
 const schema = z.object({
   id: z.uuid(),
@@ -46,7 +47,7 @@ export async function PATCH(req: Request) {
     const { id, status } = parsed.data;
     client = await db.connect();
     await client.query("BEGIN");
-    const current = await client.query("SELECT status,order_number FROM orders WHERE id=$1 FOR UPDATE", [id]);
+    const current = await client.query("SELECT status,order_number,user_id FROM orders WHERE id=$1 FOR UPDATE", [id]);
     if (!current.rowCount) {
       await client.query("ROLLBACK");
       return NextResponse.json({ error: "Commande introuvable." }, { status: 404 });
@@ -87,6 +88,7 @@ export async function PATCH(req: Request) {
           "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'reservation_expired','order',$2,$3::jsonb,$4::jsonb,$5)",
           [actor.id,id,JSON.stringify({status:previous}),JSON.stringify(cancelled.rows[0]),"La réservation de stock a expiré"]
         );
+        await queueInAppNotification(client,current.rows[0].user_id,"order_updates","Réservation expirée","La réservation de stock de votre commande "+current.rows[0].order_number+" a expiré. Contactez le garage pour vérifier les disponibilités.","order",id);
         await client.query("COMMIT");
         return NextResponse.json({ error: "La réservation de stock a expiré. La commande a été annulée ; vérifiez à nouveau les disponibilités." }, { status: 409 });
       }
@@ -160,6 +162,8 @@ export async function PATCH(req: Request) {
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'status_change','order',$2,$3::jsonb,$4::jsonb,$5)",
       [actor.id,id,JSON.stringify({status:previous}),JSON.stringify(updated.rows[0]),"Transition de commande"]
     );
+    const orderStatusLabel:Record<string,string>={confirmed:"confirmée",processing:"en préparation",shipped:"expédiée",delivered:"livrée",cancelled:"annulée"};
+    await queueInAppNotification(client,current.rows[0].user_id,"order_updates","Mise à jour de commande "+current.rows[0].order_number,"Votre commande est maintenant "+(orderStatusLabel[status]||status)+".","order",id);
     await client.query("COMMIT");
     return NextResponse.json({ order: updated.rows[0] });
   } catch {
