@@ -97,6 +97,10 @@ for (const [name, source] of [["inscription", register], ["connexion", login]]) 
 }
 
 
+const singleGarageMigration = read("database/migrations/20261107_single_garage.sql");
+assert.match(singleGarageMigration, /garages_singleton_guard/, "La base doit empêcher la création d’un second garage.");
+assert.match(singleGarageMigration, /Indian\/Antananarivo/, "Le garage unique doit utiliser le fuseau horaire de Madagascar.");
+assert.match(singleGarageMigration, /'MGA'/, "La devise par défaut du garage doit être l’Ariary.");
 const productImport = read("src/app/api/admin/products/import/route.ts");
 assert.match(adminProducts, /INSERT INTO inventory_movements/, "La création d'une pièce doit tracer son stock initial.");
 assert.match(adminProducts, /FOR UPDATE/, "La fiche produit doit verrouiller la ligne avant modification.");
