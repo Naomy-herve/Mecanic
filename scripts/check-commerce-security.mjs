@@ -216,7 +216,7 @@ assert.match(notificationHelper, /notifications\(user_id,channel,event_type,titl
 assert.match(notificationApi, /WHERE id=\$1 AND user_id=\$2/, "Un utilisateur ne peut lire que ses propres notifications.");
 assert.match(notificationPreferencesApi, /ON CONFLICT\(user_id\) DO UPDATE/, "Les préférences doivent être modifiables de façon idempotente.");
 assert.match(notificationPage, /Enregistrer mes préférences/, "Le client doit pouvoir gérer ses préférences de notification.");
-assert.match(order, /queueInAppNotification/, "La création d’une commande doit notifier le client connecté.");
+assert.match(orders, /queueInAppNotification/, "La création d’une commande doit notifier le client connecté.");
 assert.match(adminOrders, /queueInAppNotification/, "Les changements de commande doivent notifier le client.");
 assert.match(workshopPartsApi, /movement_type/, "La consommation atelier doit conserver son historique de stock.");
 assert.match(adminAppointments, /customer_id=\$2/, "Un rendez-vous ne peut être lié qu’au véhicule du client sélectionné.");
