@@ -42,6 +42,8 @@ assert.match(orders, /await client\.query\("BEGIN"\)/, "La commande doit être t
 assert.match(orders, /FOR UPDATE/, "Les lignes produit doivent être verrouillées pendant la commande.");
 assert.match(orders, /stock_quantity\) - Number\(product\.reserved_quantity\)/, "Une commande ne doit utiliser que le stock non réservé.");
 assert.match(orders, /reserved_quantity=reserved_quantity\+\$1/, "Une commande en attente doit réserver les quantités.");
+assert.doesNotMatch(orders, /stock_quantity=stock_quantity-\$1/, "Une commande en attente ne doit pas retirer le stock physique avant confirmation.");
+
 assert.match(orders, /INSERT INTO stock_reservations/, "Chaque ligne de commande doit créer une réservation.");
 assert.match(orders, /interval '24 hours'/, "Les réservations de commande doivent expirer automatiquement après 24 heures.");
 assert.match(orders, /SELECT id FROM garages WHERE is_active=true/, "Les commandes doivent être rattachées au garage unique.");
@@ -92,6 +94,9 @@ assert.match(productPage, /disabled=\{p\.available_quantity<=0\}/, "Une pièce s
 assert.match(catalogue, /available_quantity/, "Le catalogue doit afficher le stock disponible après réservation.");
 assert.match(products, /available_quantity/, "L’API catalogue doit exposer le stock disponible, pas le stock physique brut.");
 assert.match(inventoryHelper, /status='expired'/, "Les réservations expirées doivent être libérées de façon centralisée.");
+assert.match(inventoryHelper, /o\.status='pending'/, "Une commande en attente doit être annulée lorsque toutes ses réservations expirent.");
+assert.match(inventoryHelper, /reservation_expired/, "L’expiration automatique doit être auditée.");
+
 assert.match(inventoryMovementsApi, /reserved_quantity/, "Les mouvements manuels ne doivent pas consommer du stock réservé.");
 const inventoryReservationsApi = read("src/app/api/admin/inventory/reservations/route.ts");
 assert.match(inventoryReservationsApi, /releaseExpiredStockReservations/, "L’écran inventaire doit libérer les réservations échues avant affichage.");
