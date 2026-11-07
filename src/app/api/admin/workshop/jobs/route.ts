@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db, query } from "@/lib/db";
 import { requireStaff } from "@/lib/auth";
+import { queueInAppNotification } from "@/lib/notifications";
 
 const createSchema = z.object({
   customerId: z.uuid().nullable().optional(),
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_data) VALUES($1,'create','workshop_job',$2,$3::jsonb)",
       [actor.id,inserted.rows[0].id,JSON.stringify(inserted.rows[0])]
     );
+    await queueInAppNotification(client,data.customerId,"repair_updates","Dossier atelier ouvert","Votre véhicule a été enregistré dans le dossier "+inserted.rows[0].job_number+".","workshop_job",inserted.rows[0].id);
     await client.query("COMMIT");
     return NextResponse.json({ job: inserted.rows[0] }, { status: 201 });
   } catch (error) {
@@ -67,7 +69,7 @@ export async function PATCH(req: Request) {
     const data = updateSchema.parse(await req.json());
     client = await db.connect();
     await client.query("BEGIN");
-    const current = await client.query("SELECT status FROM workshop_jobs WHERE id=$1 FOR UPDATE", [data.id]);
+    const current = await client.query("SELECT status,customer_id,job_number FROM workshop_jobs WHERE id=$1 FOR UPDATE", [data.id]);
     if (!current.rowCount) {
       await client.query("ROLLBACK");
       return NextResponse.json({ error: "Dossier introuvable." }, { status: 404 });
@@ -91,6 +93,8 @@ export async function PATCH(req: Request) {
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'status_change','workshop_job',$2,$3::jsonb,$4::jsonb,$5)",
       [actor.id,data.id,JSON.stringify({status:previous}),JSON.stringify(updated.rows[0]),data.note || null]
     );
+    const jobStatusLabel:Record<string,string>={diagnosis:"en diagnostic",quote_pending:"avec un devis en attente",approved:"avec un devis approuvé",in_repair:"en réparation",quality_check:"en contrôle qualité",completed:"terminé",delivered:"restitué",cancelled:"annulé"};
+    await queueInAppNotification(client,current.rows[0].customer_id,"repair_updates","Mise à jour de votre réparation "+current.rows[0].job_number,"Le statut de votre dossier est maintenant "+(jobStatusLabel[data.status]||data.status)+".","workshop_job",data.id);
     await client.query("COMMIT");
     return NextResponse.json({ job: updated.rows[0] });
   } catch (error) {
