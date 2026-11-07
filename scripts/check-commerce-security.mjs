@@ -101,6 +101,12 @@ const singleGarageMigration = read("database/migrations/20261107_single_garage.s
 assert.match(singleGarageMigration, /garages_singleton_guard/, "La base doit empêcher la création d’un second garage.");
 assert.match(singleGarageMigration, /Indian\/Antananarivo/, "Le garage unique doit utiliser le fuseau horaire de Madagascar.");
 assert.match(singleGarageMigration, /'MGA'/, "La devise par défaut du garage doit être l’Ariary.");
+const supplierOrdersApi = read("src/app/api/admin/supplier-orders/route.ts");
+const supplierOrdersPage = read("src/app/admin/fournisseurs/orders.tsx");
+assert.match(supplierOrdersApi, /quantity_received=quantity_received\+\$1/, "Les réceptions fournisseurs doivent cumuler les quantités réellement reçues.");
+assert.match(supplierOrdersApi, /INSERT INTO inventory_movements/, "Chaque réception liée à une pièce doit créer un mouvement de stock.");
+assert.match(supplierOrdersApi, /FOR UPDATE/, "Les réceptions doivent verrouiller les bons et leurs lignes.");
+assert.match(supplierOrdersPage, /Valider les quantités reçues/, "L’interface doit permettre de saisir les quantités livrées.");
 const productImport = read("src/app/api/admin/products/import/route.ts");
 assert.match(adminProducts, /INSERT INTO inventory_movements/, "La création d'une pièce doit tracer son stock initial.");
 assert.match(adminProducts, /FOR UPDATE/, "La fiche produit doit verrouiller la ligne avant modification.");
