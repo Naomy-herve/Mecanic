@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
     const ids = normalizedItems.map(item => item.productId);
     const locked = await client.query(
-      "SELECT id,sku,name,price,currency,stock_quantity FROM products WHERE id=ANY($1::uuid[]) AND is_active=true FOR UPDATE",
+      "SELECT id,sku,name,price,currency,stock_quantity,purchase_price FROM products WHERE id=ANY($1::uuid[]) AND is_active=true FOR UPDATE",
       [ids]
     );
 
@@ -91,7 +91,15 @@ export async function POST(req: Request) {
         "INSERT INTO order_items(order_id,product_id,sku,product_name,quantity,unit_price,line_total) VALUES($1,$2,$3,$4,$5,$6,$7)",
         [inserted.rows[0].id, item.productId, item.product.sku, item.product.name, item.quantity, item.unit, item.line]
       );
+      await client.query(
+        "INSERT INTO inventory_movements(product_id,movement_type,quantity,unit_cost,reason,reference_type,reference_id,document_number,created_by) VALUES($1,'sale',$2,$3,$4,'order',$5,$6,$7)",
+        [item.productId,-item.quantity,item.product.purchase_price ?? null,"Commande client "+inserted.rows[0].order_number,inserted.rows[0].id,inserted.rows[0].order_number,user?.id || null]
+      );
     }
+    await client.query(
+      "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_data,reason) VALUES($1,'create','order',$2,$3::jsonb,$4)",
+      [user?.id || null,inserted.rows[0].id,JSON.stringify(inserted.rows[0]),"Commande client enregistrée"]
+    );
 
     await client.query("COMMIT");
     return NextResponse.json({ order: inserted.rows[0] }, { status: 201 });
