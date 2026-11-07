@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     client = await db.connect();
     await client.query("BEGIN");
     const current = await client.query(
-      "SELECT id,sku,name,stock_quantity FROM products WHERE id=$1 AND is_active=true FOR UPDATE",
+      "SELECT id,sku,name,stock_quantity,reserved_quantity FROM products WHERE id=$1 AND is_active=true FOR UPDATE",
       [data.productId]
     );
     if (!current.rowCount) {
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pièce introuvable ou inactive." }, { status: 404 });
     }
     const before = Number(current.rows[0].stock_quantity);
-    const difference = data.countedQuantity - before;
+    if (data.countedQuantity < Number(current.rows[0].reserved_quantity)) {\n      await client.query("ROLLBACK");\n      return NextResponse.json({ error: "Le comptage ne peut pas être inférieur aux quantités déjà réservées." }, { status: 409 });\n    }\n    const difference = data.countedQuantity - before;
     if (difference !== 0) {
       await client.query(
         "UPDATE products SET stock_quantity=$1,updated_at=now() WHERE id=$2",
