@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db, query } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 const schema = z.object({
   sku: z.string().trim().min(2).max(64),
@@ -27,6 +28,7 @@ const schema = z.object({
 export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   try {
+    await releaseExpiredStockReservations();
     const result = await query("SELECT p.*,c.name AS category_name FROM products p LEFT JOIN categories c ON c.id=p.category_id ORDER BY p.created_at DESC LIMIT 200");
     return NextResponse.json({ products: result.rows });
   } catch {
