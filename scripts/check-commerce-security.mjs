@@ -104,6 +104,11 @@ const singleGarageMigration = read("database/migrations/20261107_single_garage.s
 assert.match(singleGarageMigration, /garages_singleton_guard/, "La base doit empêcher la création d’un second garage.");
 assert.match(singleGarageMigration, /Indian\/Antananarivo/, "Le garage unique doit utiliser le fuseau horaire de Madagascar.");
 assert.match(singleGarageMigration, /'MGA'/, "La devise par défaut du garage doit être l’Ariary.");
+const inventoryCountsApi = read("src/app/api/admin/inventory/counts/route.ts");
+const stockPage = read("src/app/admin/stocks/page.tsx");
+assert.match(inventoryCountsApi, /countedQuantity-before/, "L’inventaire physique doit calculer l’écart par rapport au stock système.");
+assert.match(inventoryCountsApi, /movement_type,quantity,reason,reference_type/, "Les écarts d’inventaire doivent être tracés comme ajustements.");
+assert.match(stockPage, /Valider le comptage physique/, "L’interface doit permettre de saisir le stock réellement compté.");
 const supplierOrdersApi = read("src/app/api/admin/supplier-orders/route.ts");
 const supplierOrdersPage = read("src/app/admin/fournisseurs/orders.tsx");
 assert.match(supplierOrdersApi, /quantity_received=quantity_received\+\$1/, "Les réceptions fournisseurs doivent cumuler les quantités réellement reçues.");
