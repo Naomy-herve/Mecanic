@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db, query } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 
 const schema = z.object({
   workshopJobId: z.uuid(),
@@ -10,7 +10,7 @@ const schema = z.object({
 });
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  if (!await requireStaff("mechanic")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   try {
     const result = await query(
       "SELECT p.id,p.workshop_job_id,p.product_id,p.description,p.quantity,p.unit_price,p.created_at,j.job_number,pr.sku FROM workshop_job_parts p JOIN workshop_jobs j ON j.id=p.workshop_job_id LEFT JOIN products pr ON pr.id=p.product_id ORDER BY p.created_at DESC LIMIT 300"
@@ -22,7 +22,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const actor = await requireAdmin();
+  const actor = await requireStaff("mechanic");
   if (!actor) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   let client: import("pg").PoolClient | undefined;
   try {
