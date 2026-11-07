@@ -31,8 +31,10 @@ export default function WorkshopPage(){
    const [d,pd,md]=await Promise.all([r.json(),p.json(),m.json()]);
    if(!r.ok||!p.ok||!m.ok)throw new Error(d.error||pd.error||md.error||"Chargement impossible.");
    setRows(d.jobs||[]);setProducts((pd.products||[]).filter((x:Product)=>x.is_active));setParts(md.parts||[]);
-   setSelectedJob(current=>current||(d.jobs||[]).find((x:Job)=>["approved","in_repair"].includes(x.status))?.id||"");
-   setSelectedProduct(current=>current||(pd.products||[]).find((x:Product)=>x.is_active&&x.stock_quantity>0)?.id||"");
+   const availableJobs=(d.jobs||[]).filter((x:Job)=>["approved","in_repair"].includes(x.status));
+   const availableProducts=(pd.products||[]).filter((x:Product)=>x.is_active&&x.stock_quantity>0);
+   setSelectedJob(current=>availableJobs.some((x:Job)=>x.id===current)?current:availableJobs[0]?.id||"");
+   setSelectedProduct(current=>availableProducts.some((x:Product)=>x.id===current)?current:availableProducts[0]?.id||"");
   }catch(e){setError(e instanceof Error?e.message:"Chargement impossible.");}
   finally{setLoading(false);}
  },[]);
