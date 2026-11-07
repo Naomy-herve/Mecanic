@@ -32,7 +32,7 @@ export async function GET() {
       query("SELECT a.*,u.full_name AS customer_name,me.full_name AS mechanic_name,cv.make,cv.model,cv.registration_number FROM appointments a LEFT JOIN users u ON u.id=a.customer_id LEFT JOIN users me ON me.id=a.assigned_mechanic_id LEFT JOIN customer_vehicles cv ON cv.id=a.customer_vehicle_id ORDER BY COALESCE(a.scheduled_start,a.requested_at) DESC LIMIT 200"),
       query("SELECT u.id,u.full_name FROM users u JOIN user_role_assignments ura ON ura.user_id=u.id JOIN garages g ON g.id=ura.garage_id AND g.is_active=true WHERE ura.role='mechanic' ORDER BY u.full_name"),
       query("SELECT id,full_name,email FROM users WHERE role='customer' ORDER BY full_name LIMIT 500"),
-      query("SELECT cv.id,cv.user_id,cv.make,cv.model,cv.registration_number FROM customer_vehicles cv ORDER BY cv.created_at DESC LIMIT 500")
+      query("SELECT cv.id,cv.customer_id AS user_id,cv.make,cv.model,cv.registration_number FROM customer_vehicles cv ORDER BY cv.created_at DESC LIMIT 500")
     ]);
     return NextResponse.json({ appointments: result.rows, mechanics: mechanics.rows, customers: customers.rows, vehicles: vehicles.rows });
   } catch {
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     await client.query("BEGIN");
     if (data.customerVehicleId) {
       if (!data.customerId) { await client.query("ROLLBACK"); return NextResponse.json({ error: "Sélectionnez le client associé au véhicule." }, { status: 400 }); }
-      const vehicle = await client.query("SELECT id FROM customer_vehicles WHERE id=$1 AND user_id=$2 FOR SHARE", [data.customerVehicleId,data.customerId]);
+      const vehicle = await client.query("SELECT id FROM customer_vehicles WHERE id=$1 AND customer_id=$2 FOR SHARE", [data.customerVehicleId,data.customerId]);
       if (!vehicle.rowCount) { await client.query("ROLLBACK"); return NextResponse.json({ error: "Ce véhicule n’appartient pas au client sélectionné." }, { status: 404 }); }
     }
     if (data.mechanicId) {
