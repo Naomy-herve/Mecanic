@@ -19,6 +19,7 @@ const cartPage = read("src/app/panier/page.tsx");
 const cartStorage = read("src/lib/cart.ts");
 const addToCart = read("src/components/add-to-cart.tsx");
 const adminMetrics = read("src/app/api/admin/metrics/route.ts");
+const adminDashboard = read("src/app/admin/page.tsx");
 const stockPage = read("src/app/admin/stocks/page.tsx");
 const referencePages = read("src/components/reference-pages.tsx");
 const homePage = read("src/app/page.tsx");
@@ -186,4 +187,8 @@ assert.match(adminProductsPage, /name="taxRate"/, "Le formulaire administrateur 
 assert.match(adminProductsPage, /name="warrantyMonths"/, "Le formulaire administrateur doit exposer la garantie.");
 assert.match(bootstrapAdmin, /SELECT id FROM garages WHERE is_active=true/, "Le compte administrateur doit être rattaché au garage unique.");
 assert.match(bootstrapAdmin, /garage_id/, "Le bootstrap doit enregistrer le rattachement au garage.");
+assert.match(adminDashboard, /FROM payments WHERE status='verified'/, "Le tableau de bord doit compter uniquement les paiements vérifiés.");
+assert.match(adminDashboard, /stock_quantity-reserved_quantity/, "Le tableau de bord doit distinguer le stock disponible du stock physique.");
+assert.match(adminDashboard, /inventory_movements im/, "La marge estimée doit s’appuyer sur les coûts réellement enregistrés.");
+assert.match(adminDashboard, /href="\/admin\/depenses"/, "Le tableau de bord doit donner accès au suivi des dépenses.");
 console.log("Contrôles réussis : inventaire traçable, créneaux atelier protégés, paiements vérifiés, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
