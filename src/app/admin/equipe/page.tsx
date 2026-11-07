@@ -41,7 +41,7 @@ export default function TeamPage(){
   </section>
   <h2>Membres et accès</h2>
   <div className="table-wrap"><table><thead><tr><th>Nom</th><th>E-mail</th><th>Rôles attribués</th><th>Actions</th></tr></thead><tbody>
-   {rows.map(member=><tr key={member.id}><td>{member.full_name}</td><td>{member.email}</td><td>{member.staff_roles.map(r=><span key={r} className="badge">{labels[r]||r}</span>)}</td><td>{member.staff_roles.map(r=><button key={r} type="button" className="btn btn-outline" onClick={()=>void revoke(member.id,r)}>Retirer {labels[r]||r}</button>)}</td></tr>)}
+   {rows.map(member=><tr key={member.id}><td>{member.full_name}</td><td>{member.email}</td><td>{member.staff_roles.map(r=><span key={r}>{labels[r]||r}</span>)}</td><td>{member.staff_roles.map(r=><button key={r} type="button" className="btn btn-outline" onClick={()=>void revoke(member.id,r)}>Retirer {labels[r]||r}</button>)}</td></tr>)}
   </tbody></table>{loading&&<p className="muted" style={{padding:18}}>Chargement…</p>}{!loading&&!rows.length&&<p className="muted" style={{padding:18}}>Aucun compte client à affecter pour le moment.</p>}</div>
  </div></main>;
 }
