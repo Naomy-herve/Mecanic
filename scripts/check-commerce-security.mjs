@@ -121,4 +121,6 @@ assert.match(adminProductsPage, /name="purchasePrice"/, "Le formulaire administr
 assert.match(adminProductsPage, /name="minimumStock"/, "Le formulaire administrateur doit exposer le seuil minimum.");
 assert.match(adminProductsPage, /name="taxRate"/, "Le formulaire administrateur doit exposer le taux de taxe.");
 assert.match(adminProductsPage, /name="warrantyMonths"/, "Le formulaire administrateur doit exposer la garantie.");
+assert.match(bootstrapAdmin, /SELECT id FROM garages WHERE is_active=true/, "Le compte administrateur doit être rattaché au garage unique.");
+assert.match(bootstrapAdmin, /garage_id/, "Le bootstrap doit enregistrer le rattachement au garage.");
 console.log("Contrôles réussis : inventaire traçable, créneaux atelier protégés, paiements vérifiés, stocks protégés, catalogue, équivalences, commandes, accès, devises, catégories, véhicules et normalisation des e-mails.");
