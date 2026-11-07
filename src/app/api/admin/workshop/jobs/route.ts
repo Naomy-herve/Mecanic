@@ -21,7 +21,8 @@ const updateSchema = z.object({
   recommendations: z.string().trim().max(5000).optional(),
   internalNotes: z.string().trim().max(3000).optional(),
   customerApprovalNote: z.string().trim().max(1000).optional(),
-});
+}).refine(v=>!["quote_pending","approved"].includes(v.status)||Boolean(v.diagnosis&&v.diagnosis.length>=3),{message:"Un diagnostic est requis pour soumettre ou approuver un devis."})
+  .refine(v=>v.status!=="approved"||Boolean(v.customerApprovalNote&&v.customerApprovalNote.length>=3),{message:"Consignez l’accord du client avant d’approuver le devis."});
 
 export async function GET() {
   if (!await requireStaff("mechanic","seller")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
@@ -106,7 +107,7 @@ export async function PATCH(req: Request) {
     );
     await client.query(
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'status_change','workshop_job',$2,$3::jsonb,$4::jsonb,$5)",
-      [actor.id,data.id,JSON.stringify({status:previous}),JSON.stringify(updated.rows[0]),data.note || null]
+      [actor.id,data.id,JSON.stringify({status:previous}),JSON.stringify(updated.rows[0]),data.internalNotes || data.customerApprovalNote || data.diagnosis || null]
     );
     const jobStatusLabel:Record<string,string>={diagnosis:"en diagnostic",quote_pending:"avec un devis en attente",approved:"avec un devis approuvé",in_repair:"en réparation",quality_check:"en contrôle qualité",completed:"terminé",delivered:"restitué",cancelled:"annulé"};
     await queueInAppNotification(client,current.rows[0].customer_id,"repair_updates","Mise à jour de votre réparation "+current.rows[0].job_number,"Le statut de votre dossier est maintenant "+(jobStatusLabel[data.status]||data.status)+".","workshop_job",data.id);
