@@ -3,6 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 const schema = z.object({
   items: z.array(z.object({
@@ -40,24 +41,9 @@ export async function POST(req: Request) {
     const customerEmail = user?.email || data.customerEmail;
     const customerName = user?.fullName || data.customerName;
 
+    await releaseExpiredStockReservations();
     client = await db.connect();
     await client.query("BEGIN");
-
-    await client.query(`
-      WITH expired AS (
-        UPDATE stock_reservations
-        SET status='expired',updated_at=now()
-        WHERE status='reserved' AND expires_at IS NOT NULL AND expires_at <= now()
-        RETURNING product_id,quantity
-      )
-      UPDATE products p
-      SET reserved_quantity=GREATEST(0,p.reserved_quantity-expired.quantity)
-      FROM (
-        SELECT product_id,sum(quantity)::int AS quantity
-        FROM expired GROUP BY product_id
-      ) expired
-      WHERE p.id=expired.product_id
-    `);
 
     const ids = normalizedItems.map(item => item.productId);
     const locked = await client.query(
