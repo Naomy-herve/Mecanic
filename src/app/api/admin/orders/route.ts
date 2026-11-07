@@ -33,7 +33,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  if (!await requireAdmin()) {
+  const actor = await requireAdmin();
+  if (!actor) {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
 
@@ -85,7 +86,7 @@ export async function PATCH(req: Request) {
         );
         await client.query(
           "INSERT INTO inventory_movements(product_id,movement_type,quantity,reason,reference_type,reference_id,document_number,created_by) VALUES($1,'return',$2,$3,'order',$4,$5,$6)",
-          [item.product_id,item.quantity,"Restitution après annulation de la commande "+current.rows[0].order_number,id,current.rows[0].order_number,(await requireAdmin())?.id || null]
+          [item.product_id,item.quantity,"Restitution après annulation de la commande "+current.rows[0].order_number,id,current.rows[0].order_number,actor.id]
         );
       }
     }
@@ -96,7 +97,7 @@ export async function PATCH(req: Request) {
     );
     await client.query(
       "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'status_change','order',$2,$3::jsonb,$4::jsonb,$5)",
-      [(await requireAdmin())?.id || null,id,JSON.stringify({status:previous}),JSON.stringify(updated.rows[0]),"Transition de commande"]
+      [actor.id,id,JSON.stringify({status:previous}),JSON.stringify(updated.rows[0]),"Transition de commande"]
     );
 
     await client.query("COMMIT");
