@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     let order: { id: string; customer_id: string | null; total: string; currency: string; status: string } | null = null;
     if (linkedOrderId) {
       const result = await client.query(
-        "SELECT id,customer_id,total,currency,status FROM orders WHERE id=$1 FOR UPDATE",
+        "SELECT id,user_id AS customer_id,total,currency,status FROM orders WHERE id=$1 FOR UPDATE",
         [linkedOrderId]
       );
       order = result.rows[0] ?? null;
