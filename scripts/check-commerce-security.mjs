@@ -169,6 +169,9 @@ assert.match(adminPayments, /BEGIN/, "La création et la validation des paiement
 assert.match(adminPayments, /SELECT total,status FROM invoices WHERE id=\$1 FOR UPDATE/, "La validation doit verrouiller la facture avant de recalculer le solde.");
 assert.match(adminPayments, /SELECT total,status FROM orders WHERE id=\$1 FOR UPDATE/, "La validation doit verrouiller la commande avant de recalculer le solde.");
 assert.match(adminPayments, /validation dépasserait le solde/, "La validation d’un paiement doit prévenir le dépassement concurrent.");
+assert.match(adminPayments, /payment\.status === "verified" && data\.status === "refunded"/, "Un paiement confirmé ne peut être remboursé qu’avec une transition contrôlée.");
+assert.match(read("src/app/admin/factures/page.tsx"), /customerId:f\.get\("customerId"\)/, "Une facture doit pouvoir être associée à un client.");
+
 assert.match(adminPayments, /paid_at=CASE WHEN \$1='verified'/, "La date de paiement doit être enregistrée lors de la vérification.");
 assert.match(adminOrders, /payment_status,total,currency/, "Le formulaire de paiement doit connaître le statut financier des commandes.");
 assert.match(read("src/app/admin/paiements/page.tsx"), /Enregistrer le remboursement/, "L’administration doit pouvoir enregistrer un remboursement.");
