@@ -12,7 +12,7 @@ export async function GET(){
  try{
   const result=await query(
    `SELECT u.id,u.full_name,u.email,
-     COALESCE(json_agg(ura.role) FILTER (WHERE ura.role IS NOT NULL),'[]'::json) AS staff_roles
+     COALESCE(json_agg(ura.role) FILTER (WHERE g.id IS NOT NULL),'[]'::json) AS staff_roles
     FROM users u
     LEFT JOIN user_role_assignments ura ON ura.user_id=u.id
     LEFT JOIN garages g ON g.id=ura.garage_id AND g.is_active=true
