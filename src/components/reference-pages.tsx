@@ -192,10 +192,11 @@ export function ReferencePage({slug,contactSent=false}:{slug:string;contactSent?
   </div>;
 
   if(!page) return <main className="ref-page"><div className="ref-container">
-      {contactSent&&<p className="ref-notice" role="status">Votre demande a bien été envoyée. Notre équipe vous répondra dès que possible.</p>}<h1>Page introuvable</h1><Link href="/reference/accueil-premium">Retour aux pages de démonstration</Link></div></main>;
+      <h1>Page introuvable</h1><Link href="/reference/accueil-premium">Retour aux pages de démonstration</Link></div></main>;
 
   return <main className={"ref-page ref-"+page.style}>
     <div className="ref-container">
+      {contactSent&&<p className="ref-notice" role="status">Votre demande a bien été envoyée. Notre équipe vous répondra dès que possible.</p>}
       {page.kind!=="home"&&<><div className="ref-breadcrumb"><Link href="/">KIA PIÈCE</Link><span>/</span><span>Pages de référence</span><span>/</span><b>{page.title}</b></div>
       <div className="ref-heading"><div><div className="ref-eyebrow">{page.eyebrow}</div><h1>{page.title}</h1><p>{page.desc}</p></div><div className="ref-page-number">{page.n}<small>/ 13</small></div></div></>}
 
