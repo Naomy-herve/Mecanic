@@ -7,6 +7,8 @@ const equivalents = read("src/app/api/products/[slug]/equivalents/route.ts");
 const orders = read("src/app/api/orders/route.ts");
 const customerOrders = read("src/app/api/account/orders/route.ts");
 const adminOrders = read("src/app/api/admin/orders/route.ts");
+const inventoryMovementsApi = read("src/app/api/admin/inventory/movements/route.ts");
+const inventoryHelper = read("src/lib/inventory.ts");
 const adminProducts = read("src/app/api/admin/products/route.ts");
 const adminProductsPage = read("src/app/admin/produits/page.tsx");
 const register = read("src/app/api/auth/register/route.ts");
@@ -42,6 +44,9 @@ assert.match(orders, /stock_quantity\) - Number\(product\.reserved_quantity\)/, 
 assert.match(orders, /reserved_quantity=reserved_quantity\+\$1/, "Une commande en attente doit réserver les quantités.");
 assert.match(orders, /INSERT INTO stock_reservations/, "Chaque ligne de commande doit créer une réservation.");
 assert.match(orders, /interval '24 hours'/, "Les réservations de commande doivent expirer automatiquement après 24 heures.");
+assert.match(orders, /SELECT id FROM garages WHERE is_active=true/, "Les commandes doivent être rattachées au garage unique.");
+assert.match(orders, /WITH expired AS/, "Les réservations expirées doivent être libérées avant une nouvelle commande.");
+
 assert.match(orders, /product\.price/, "Le total doit être calculé à partir des prix de la base.");
 assert.match(orders, /ROLLBACK/, "Une erreur doit annuler la transaction.");
 assert.match(adminOrders, /VALUES\(\$1,'sale'/, "La confirmation doit convertir la réservation en mouvement de vente.");
@@ -84,6 +89,11 @@ assert.match(addToCart, /readCart\(\)/, "L’ajout au panier doit utiliser le st
 assert.match(productPage, /<AddToCart product=/, "La fiche produit doit permettre un ajout au panier.");
 assert.match(catalogue, /<AddToCart product=/, "Les cartes du catalogue doivent permettre un ajout au panier.");
 assert.match(productPage, /disabled=\{p\.available_quantity<=0\}/, "Une pièce sans stock disponible ne doit pas être ajoutée au panier.");
+assert.match(catalogue, /available_quantity/, "Le catalogue doit afficher le stock disponible après réservation.");
+assert.match(products, /available_quantity/, "L’API catalogue doit exposer le stock disponible, pas le stock physique brut.");
+assert.match(inventoryHelper, /status='expired'/, "Les réservations expirées doivent être libérées de façon centralisée.");
+assert.match(inventoryMovementsApi, /reserved_quantity/, "Les mouvements manuels ne doivent pas consommer du stock réservé.");
+
 assert.match(cartPage, /aria-label=\{"Augmenter la quantité/, "Les contrôles de quantité doivent avoir des libellés accessibles.");
 assert.match(adminMetrics, /requireAdmin\(\)/, "Les indicateurs de gestion doivent être protégés.");
 assert.match(adminMetrics, /low_stock_products/, "Le stock faible doit provenir de la base.");
@@ -115,6 +125,7 @@ const inventoryCountsApi = read("src/app/api/admin/inventory/counts/route.ts");
 const stockPage = read("src/app/admin/stocks/page.tsx");
 assert.match(inventoryCountsApi, /data\.countedQuantity\s*-\s*before/, "L’inventaire physique doit calculer l’écart par rapport au stock système.");
 assert.match(inventoryCountsApi, /movement_type,quantity,reason,reference_type/, "Les écarts d’inventaire doivent être tracés comme ajustements.");
+assert.match(inventoryCountsApi, /countedQuantity < Number\(current\.rows\[0\]\.reserved_quantity\)/, "Le comptage physique ne doit pas descendre sous le stock réservé.");
 assert.match(stockPage, /Valider le comptage physique/, "L’interface doit permettre de saisir le stock réellement compté.");
 const supplierOrdersApi = read("src/app/api/admin/supplier-orders/route.ts");
 const supplierOrdersPage = read("src/app/admin/fournisseurs/orders.tsx");
@@ -137,6 +148,7 @@ const workshopPartsApi = read("src/app/api/admin/workshop/jobs/parts/route.ts");
 const workshopPage = read("src/app/admin/atelier/page.tsx");
 assert.match(workshopPartsApi, /movement_type,quantity,unit_cost,reason,reference_type,reference_id/, "Les pièces consommées en atelier doivent créer un mouvement de stock lié au dossier.");
 assert.match(workshopPartsApi, /stock_quantity=stock_quantity-\$1/, "La consommation en atelier doit décrémenter le stock dans la même transaction.");
+assert.match(workshopPartsApi, /stock_quantity\) - Number\(row\.reserved_quantity\)/, "L’atelier ne doit pas utiliser des pièces déjà réservées à un client.");
 assert.match(workshopPage, /Déduire du stock et rattacher au dossier/, "L’atelier doit proposer l’ajout d’une pièce au dossier.");
 const adminAppointments = read("src/app/api/admin/appointments/route.ts");
 assert.match(adminAppointments, /pg_advisory_xact_lock/, "Les réservations d’un même mécanicien doivent être sérialisées pour empêcher les doubles créneaux.");
