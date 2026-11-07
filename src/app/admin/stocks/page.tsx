@@ -3,11 +3,14 @@ import {useCallback,useEffect,useState} from "react";
 
 type Product={id:string;sku:string;name:string;stock_quantity:number;reserved_quantity:number;currency:string};
 type Movement={id:string;movement_type:string;quantity:number;reason:string;created_at:string;sku:string;name:string};
+type Reservation={id:string;quantity:number;status:string;expires_at:string|null;created_at:string;sku:string;name:string;order_number:string|null;customer_name:string|null};
 const labels:Record<string,string>={receipt:"Réception",sale:"Vente",return:"Retour",damage:"Endommagé",loss:"Perte",adjustment:"Ajustement",repair_use:"Utilisation atelier"};
+const reservationLabels:Record<string,string>={reserved:"Réservé",consumed:"Consommé",released:"Libéré",expired:"Expiré"};
 
 export default function StockPage(){
  const [products,setProducts]=useState<Product[]>([]);
  const [rows,setRows]=useState<Movement[]>([]);
+ const [reservations,setReservations]=useState<Reservation[]>([]);
  const [countProductId,setCountProductId]=useState("");
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
@@ -16,11 +19,11 @@ export default function StockPage(){
 
  const load=useCallback(async()=>{
   try{
-   const [p,m]=await Promise.all([fetch("/api/admin/products",{cache:"no-store"}),fetch("/api/admin/inventory/movements",{cache:"no-store"})]);
-   if(p.status===403||m.status===403){window.location.href="/compte";return;}
-   const pd=await p.json(),md=await m.json();
-   if(!p.ok||!m.ok)throw new Error(pd.error||md.error||"Chargement impossible.");
-   setProducts(pd.products||[]);setRows(md.movements||[]);
+   const [p,m,r]=await Promise.all([fetch("/api/admin/products",{cache:"no-store"}),fetch("/api/admin/inventory/movements",{cache:"no-store"}),fetch("/api/admin/inventory/reservations",{cache:"no-store"})]);
+   if([p,m,r].some(x=>x.status===403)){window.location.href="/compte";return;}
+   const [pd,md,rd]=await Promise.all([p.json(),m.json(),r.json()]);
+   if(!p.ok||!m.ok||!r.ok)throw new Error(pd.error||md.error||rd.error||"Chargement impossible.");
+   setProducts(pd.products||[]);setRows(md.movements||[]);setReservations(rd.reservations||[]);
    setCountProductId(current=>current||(pd.products||[])[0]?.id||"");
   }catch(e){setError(e instanceof Error?e.message:"Chargement impossible.");}
   finally{setLoading(false);}
@@ -82,6 +85,9 @@ export default function StockPage(){
    </form>
   </section>
 
+  <h2>Réservations de stock</h2>
+  <p className="muted">Les commandes en attente immobilisent temporairement les quantités pendant 24 heures. La confirmation transforme la réservation en vente ; l’annulation libère le stock.</p>
+  <div className="table-wrap"><table><thead><tr><th>Commande</th><th>Client</th><th>Pièce</th><th>Quantité</th><th>État</th><th>Expiration</th></tr></thead><tbody>{reservations.map(r=><tr key={r.id}><td>{r.order_number||"—"}</td><td>{r.customer_name||"—"}</td><td>{r.sku} — {r.name}</td><td>{r.quantity}</td><td>{reservationLabels[r.status]||r.status}</td><td>{r.expires_at?new Date(r.expires_at).toLocaleString("fr-FR"):"—"}</td></tr>)}</tbody></table>{!loading&&!reservations.length&&<p className="muted" style={{padding:18}}>Aucune réservation de stock.</p>}</div>
   <div className="table-wrap"><table><thead><tr><th>Pièce</th><th>Mouvement</th><th>Quantité</th><th>Motif</th><th>Date</th></tr></thead><tbody>{rows.map(m=><tr key={m.id}><td>{m.sku} — {m.name}</td><td>{labels[m.movement_type]||m.movement_type}</td><td>{m.quantity>0?"+":""}{m.quantity}</td><td>{m.reason}</td><td>{new Date(m.created_at).toLocaleString("fr-FR")}</td></tr>)}</tbody></table>{loading&&<p className="muted" style={{padding:18}}>Chargement…</p>}{!loading&&!rows.length&&<p className="muted" style={{padding:18}}>Aucun mouvement enregistré.</p>}</div>
  </div></main>;
 }
