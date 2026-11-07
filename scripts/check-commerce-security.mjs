@@ -93,6 +93,11 @@ assert.match(catalogue, /available_quantity/, "Le catalogue doit afficher le sto
 assert.match(products, /available_quantity/, "L’API catalogue doit exposer le stock disponible, pas le stock physique brut.");
 assert.match(inventoryHelper, /status='expired'/, "Les réservations expirées doivent être libérées de façon centralisée.");
 assert.match(inventoryMovementsApi, /reserved_quantity/, "Les mouvements manuels ne doivent pas consommer du stock réservé.");
+const inventoryReservationsApi = read("src/app/api/admin/inventory/reservations/route.ts");
+assert.match(inventoryReservationsApi, /releaseExpiredStockReservations/, "L’écran inventaire doit libérer les réservations échues avant affichage.");
+assert.match(inventoryReservationsApi, /order_number, o\.customer_name|order_number,o\.customer_name/, "L’historique doit identifier la commande et le client concernés.");
+assert.match(stockPage, /Réservations de stock/, "L’administration doit afficher les quantités réservées et leurs expirations.");
+
 
 assert.match(cartPage, /aria-label=\{"Augmenter la quantité/, "Les contrôles de quantité doivent avoir des libellés accessibles.");
 assert.match(adminMetrics, /requireAdmin\(\)/, "Les indicateurs de gestion doivent être protégés.");
