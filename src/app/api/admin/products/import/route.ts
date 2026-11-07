@@ -28,7 +28,7 @@ function parseCSV(input:string){
 }
 const slugify=(v:string)=>v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,180);
 export async function POST(req:Request){
- if(!await requireAdmin())return NextResponse.json({error:"Accès refusé."},{status:403});
+ const actor=await requireAdmin();if(!actor)return NextResponse.json({error:"Accès refusé."},{status:403});
  const form=await req.formData();const file=form.get("file");
  if(!(file instanceof File))return NextResponse.json({error:"Fichier CSV manquant."},{status:400});
  if(file.size>1_000_000)return NextResponse.json({error:"Fichier trop volumineux (maximum 1 Mo)."}, {status:413});
@@ -58,9 +58,15 @@ export async function POST(req:Request){
     try{
      const category= d.categorySlug ? await client.query("SELECT id FROM categories WHERE slug=$1 LIMIT 1",[d.categorySlug]) : {rows:[]};
      if(d.categorySlug&&!category.rows.length)throw new Error("Catégorie inconnue : "+d.categorySlug);
-     const result=await client.query("INSERT INTO products(sku,name,slug,description,category_id,price,currency,stock_quantity,condition,image_url,manufacturer,manufacturer_part_number,oem_reference) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT DO NOTHING RETURNING id",
-      [d.sku,d.name,d.slug,d.description,category.rows[0]?.id||null,d.price,d.currency,d.stockQuantity,d.condition,d.imageUrl||null,d.manufacturer||null,d.manufacturerPartNumber||null,d.oemReference||null]);
+     const result=await client.query("INSERT INTO products(sku,name,slug,description,category_id,price,currency,stock_quantity,condition,image_url,manufacturer,manufacturer_part_number,oem_reference) VALUES($1,$2,$3,$4,$5,$6,$7,0,$8,$9,$10,$11,$12) ON CONFLICT DO NOTHING RETURNING id",
+      [d.sku,d.name,d.slug,d.description,category.rows[0]?.id||null,d.price,d.currency,d.condition,d.imageUrl||null,d.manufacturer||null,d.manufacturerPartNumber||null,d.oemReference||null]);
      if(!result.rowCount)throw new Error("SKU ou slug déjà utilisé ; aucune donnée existante n'a été modifiée.");
+     const productId=result.rows[0].id;
+     if(d.stockQuantity>0){
+      await client.query("UPDATE products SET stock_quantity=$1 WHERE id=$2",[d.stockQuantity,productId]);
+      await client.query("INSERT INTO inventory_movements(product_id,movement_type,quantity,reason,created_by) VALUES($1,'receipt',$2,$3,$4)",[productId,d.stockQuantity,"Stock initial import CSV",actor.id]);
+     }
+     await client.query("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_data,reason) VALUES($1,'create','product',$2,$3::jsonb,$4)",[actor.id,productId,JSON.stringify({sku:d.sku,initialStock:d.stockQuantity}),"Import CSV"]);
      imported++;await client.query("RELEASE SAVEPOINT import_row");
     }catch(e){await client.query("ROLLBACK TO SAVEPOINT import_row");await client.query("RELEASE SAVEPOINT import_row");errors.push({line:i+1,message:e instanceof Error?e.message:"Erreur d'importation."});}
    }
