@@ -84,7 +84,8 @@ assert.match(referencePages, /total_orders[\s\S]*pending_orders[\s\S]*total_inqu
 assert.match(referencePages, /fetch\("\/api\/admin\/metrics"/, "Les pages administrateur doivent charger les indicateurs réels.");
 assert.doesNotMatch(referencePages, /"À vérifier"/, "Les indicateurs fictifs ne doivent pas être affichés.");
 assert.match(inquiries, /NextResponse\.redirect\(new URL\("\/\?contact=sent#contact"/, "Le formulaire public doit revenir avec un état de confirmation.");
-assert.match(homePage, /params\.contact==="sent"/, "La page d’accueil doit afficher la confirmation de demande.");
+assert.match(read("src/app/reference/[page]/page.tsx"), /contactSent/, "La route de référence doit transmettre l’état de confirmation du formulaire.");
+assert.match(referencePages, /contactSent/, "La page d’accueil doit afficher la confirmation de demande.");
 assert.match(siteHeader, /href="\/panier"/, "Le panier doit être accessible depuis la navigation principale.");
 assert.match(siteHeader, /<Link href="\/compte">Mon compte<\/Link>/, "Le compte doit rester accessible dans la navigation mobile.");
 assert.match(globalCss, /@media\(max-width:800px\)\{[^}]*\.nav-wrap[^}]*\}[\s\S]*?\.main-nav\{display:flex/, "La navigation principale doit rester visible sur mobile.");
