@@ -49,7 +49,7 @@ export async function PATCH(req: Request) {
     await client.query("BEGIN");
 
     const current = await client.query(
-      "SELECT status FROM orders WHERE id = $1 FOR UPDATE",
+      "SELECT status,order_number FROM orders WHERE id = $1 FOR UPDATE",
       [id]
     );
 
@@ -83,12 +83,20 @@ export async function PATCH(req: Request) {
           "UPDATE products SET stock_quantity = stock_quantity + $1, updated_at = now() WHERE id = $2",
           [item.quantity, item.product_id]
         );
+        await client.query(
+          "INSERT INTO inventory_movements(product_id,movement_type,quantity,reason,reference_type,reference_id,document_number,created_by) VALUES($1,'return',$2,$3,'order',$4,$5,$6)",
+          [item.product_id,item.quantity,"Restitution après annulation de la commande "+current.rows[0].order_number,id,current.rows[0].order_number,(await requireAdmin())?.id || null]
+        );
       }
     }
 
     const updated = await client.query(
       "UPDATE orders SET status = $1, updated_at = now() WHERE id = $2 RETURNING id, order_number, status",
       [status, id]
+    );
+    await client.query(
+      "INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data,reason) VALUES($1,'status_change','order',$2,$3::jsonb,$4::jsonb,$5)",
+      [(await requireAdmin())?.id || null,id,JSON.stringify({status:previous}),JSON.stringify(updated.rows[0]),"Transition de commande"]
     );
 
     await client.query("COMMIT");
