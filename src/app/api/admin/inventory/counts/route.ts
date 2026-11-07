@@ -26,7 +26,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pièce introuvable ou inactive." }, { status: 404 });
     }
     const before = Number(current.rows[0].stock_quantity);
-    if (data.countedQuantity < Number(current.rows[0].reserved_quantity)) {\n      await client.query("ROLLBACK");\n      return NextResponse.json({ error: "Le comptage ne peut pas être inférieur aux quantités déjà réservées." }, { status: 409 });\n    }\n    const difference = data.countedQuantity - before;
+    if (data.countedQuantity < Number(current.rows[0].reserved_quantity)) {
+      await client.query("ROLLBACK");
+      return NextResponse.json({ error: "Le comptage ne peut pas être inférieur aux quantités déjà réservées." }, { status: 409 });
+    }
+    const difference = data.countedQuantity - before;
     if (difference !== 0) {
       await client.query(
         "UPDATE products SET stock_quantity=$1,updated_at=now() WHERE id=$2",
