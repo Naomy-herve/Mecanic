@@ -121,6 +121,11 @@ assert.match(productImport, /minimum_stock,purchase_price,tax_rate,warranty_mont
 assert.match(productImport, /unit_cost,reason,created_by/, "L’import CSV doit rattacher le coût d’achat au mouvement de stock.");
 assert.match(adminProductsPage, /readOnly/, "Le stock doit être en lecture seule lors de la modification d'une fiche.");
 
+const workshopPartsApi = read("src/app/api/admin/workshop/jobs/parts/route.ts");
+const workshopPage = read("src/app/admin/atelier/page.tsx");
+assert.match(workshopPartsApi, /movement_type,quantity,unit_cost,reason,reference_type,reference_id/, "Les pièces consommées en atelier doivent créer un mouvement de stock lié au dossier.");
+assert.match(workshopPartsApi, /stock_quantity=stock_quantity-\$1/, "La consommation en atelier doit décrémenter le stock dans la même transaction.");
+assert.match(workshopPage, /Déduire du stock et rattacher au dossier/, "L’atelier doit proposer l’ajout d’une pièce au dossier.");
 const adminAppointments = read("src/app/api/admin/appointments/route.ts");
 assert.match(adminAppointments, /pg_advisory_xact_lock/, "Les réservations d’un même mécanicien doivent être sérialisées pour empêcher les doubles créneaux.");
 const adminPayments = read("src/app/api/admin/payments/route.ts");
