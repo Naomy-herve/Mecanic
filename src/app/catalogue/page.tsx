@@ -2,6 +2,7 @@ import Link from "next/link";
 import ProductImage from "@/components/product-image";
 import { AddToCart } from "@/components/add-to-cart";
 import { query } from "@/lib/db";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 type Product = {
   id: string; sku: string; name: string; slug: string; description: string;
@@ -65,6 +66,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
     AND ($9 = '' OR p.currency = $9)`;
 
   try {
+    await releaseExpiredStockReservations();
     cats = (await query<{ name: string; slug: string }>("SELECT name, slug FROM categories ORDER BY name")).rows;
     const count = await query<{ total: string }>(
       `SELECT count(*)::text AS total FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE ${where}`,
