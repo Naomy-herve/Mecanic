@@ -212,7 +212,7 @@ assert.match(teamApi, /revoke_staff_role/, "Les retraits de rôle doivent être 
 assert.match(staffDashboard, /requireStaff/, "Les employés doivent disposer d’un espace adapté à leurs rôles.");
 assert.match(loginApi, /staffRoles/, "La connexion doit transmettre les rôles assignés pour rediriger l’employé.");
 assert.match(notificationHelper, /notification_preferences/, "Les notifications doivent respecter les préférences du client.");
-assert.match(notificationHelper, /channel,status,sent_at/, "Les alertes in-app doivent être enregistrées dans la boîte de réception.");
+assert.match(notificationHelper, /notifications\(user_id,channel,event_type,title,message,status/, "Les alertes in-app doivent être enregistrées dans la boîte de réception.");
 assert.match(notificationApi, /WHERE id=\$1 AND user_id=\$2/, "Un utilisateur ne peut lire que ses propres notifications.");
 assert.match(notificationPreferencesApi, /ON CONFLICT\(user_id\) DO UPDATE/, "Les préférences doivent être modifiables de façon idempotente.");
 assert.match(notificationPage, /Enregistrer mes préférences/, "Le client doit pouvoir gérer ses préférences de notification.");
