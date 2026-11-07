@@ -23,7 +23,8 @@ const updateSchema = z.object({
   mechanicId:z.uuid().nullable().optional(),
   scheduledStart:z.iso.datetime({offset:true}).nullable().optional(),
   scheduledEnd:z.iso.datetime({offset:true}).nullable().optional(),
-}).refine(v=>Boolean(v.scheduledStart)===Boolean(v.scheduledEnd),{message:"Le début et la fin doivent être renseignés ensemble."});
+}).refine(v=>Boolean(v.scheduledStart)===Boolean(v.scheduledEnd),{message:"Le début et la fin doivent être renseignés ensemble."})
+  .refine(v=>!v.scheduledStart||new Date(v.scheduledEnd!)>new Date(v.scheduledStart),{message:"La fin doit être postérieure au début."});
 
 export async function GET() {
   if (!await requireStaff("mechanic","seller")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
