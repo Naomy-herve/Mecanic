@@ -130,7 +130,7 @@ export default function AdminProducts() {
       <div className="container">
         <div className="section-kicker">GESTION DU CATALOGUE</div>
         <h1 className="page-title">Produits & inventaire</h1>
-        <p className="muted">Espace réservé à l'administrateur : gérez les références, prix, photos, catégories et quantités en stock.</p>
+        <p className="muted">Espace réservé à l'administrateur : gérez les références, prix, photos, catégories et seuils. Les quantités sont suivies dans les mouvements de stock.</p>
         {error && <p className="notice error" role="alert">{error}</p>}
         {success && <p className="notice" role="status">{success}</p>}
 
@@ -152,7 +152,7 @@ export default function AdminProducts() {
             <div className="field"><label htmlFor="product-currency">Devise</label><select id="product-currency" name="currency" key={(editing?.id || "new") + "currency"} defaultValue={editing?.currency || "MGA"} required><option value="MGA">Ariary (MGA)</option><option value="EUR">Euro (EUR)</option><option value="USD">Dollar US (USD)</option></select></div>
           </div>
           <div className="form-grid">
-            <div className="field"><label htmlFor="product-stock">Quantité en stock</label><input id="product-stock" name="stockQuantity" type="number" min="0" step="1" key={(editing?.id || "new") + "stock"} defaultValue={editing?.stock_quantity ?? 0} required /></div>
+            <div className="field"><label htmlFor="product-stock">{editing ? "Stock actuel (lecture seule)" : "Stock initial"}</label><input id="product-stock" name="stockQuantity" type="number" min="0" step="1" key={(editing?.id || "new") + "stock"} defaultValue={editing?.stock_quantity ?? 0} required readOnly={!!editing} aria-describedby="product-stock-help" /><small id="product-stock-help" className="muted">{editing ? "Pour corriger le stock, utilisez les mouvements de stock afin de conserver une trace." : "Le stock initial sera automatiquement inscrit dans l’historique."}</small></div>
             <div className="field"><label htmlFor="product-condition">État</label><select id="product-condition" name="condition" key={(editing?.id || "new") + "condition"} defaultValue={editing?.condition || "new"}><option value="new">Neuf</option><option value="used">Occasion</option><option value="refurbished">Reconditionné</option></select></div>
           </div>
           <ProductImageField key={editing?.id || "new"} defaultValue={editing?.image_url || ""} />
