@@ -52,9 +52,9 @@ export async function POST(req: Request) {
         await client.query("ROLLBACK");
         return NextResponse.json({ error: "Facture introuvable." }, { status: 404 });
       }
-      if (["void", "refunded"].includes(invoice.status)) {
+      if (!["issued", "partially_paid"].includes(invoice.status)) {
         await client.query("ROLLBACK");
-        return NextResponse.json({ error: "Cette facture ne peut plus recevoir de paiement." }, { status: 409 });
+        return NextResponse.json({ error: "La facture doit être émise et présenter un solde dû." }, { status: 409 });
       }
     }
 
@@ -131,40 +131,84 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Paiement introuvable." }, { status: 404 });
     }
     const payment = result.rows[0];
-    if (payment.status !== "pending" && payment.status !== data.status) {
+    if (payment.status !== "pending") {
+      if (payment.status === data.status) {
+        await client.query("COMMIT");
+        return NextResponse.json({ ok: true, status: data.status });
+      }
       await client.query("ROLLBACK");
       return NextResponse.json({ error: "Ce paiement a déjà été traité." }, { status: 409 });
     }
 
-    await client.query(
-      "UPDATE payments SET status=$1,verified_by=$2,verified_at=now(),verification_note=$3 WHERE id=$4",
-      [data.status,actor.id,data.note || null,data.id]
-    );
-
+    // Lock the accounting documents before recalculating balances. This serializes
+    // concurrent verifications for the same invoice/order and prevents lost updates.
+    let invoice: { total: string; status: string } | null = null;
+    let order: { total: string; status: string } | null = null;
     if (payment.invoice_id) {
-      const sum = await client.query("SELECT COALESCE(sum(amount),0)::numeric AS paid FROM payments WHERE invoice_id=$1 AND status='verified'", [payment.invoice_id]);
-      const invoice = await client.query("SELECT total FROM invoices WHERE id=$1 FOR UPDATE", [payment.invoice_id]);
-      if (invoice.rowCount) {
-        const paid = Number(sum.rows[0].paid);
-        const total = Number(invoice.rows[0].total);
-        await client.query(
-          "UPDATE invoices SET amount_paid=$1,status=$2,updated_at=now() WHERE id=$3",
-          [paid,paid>=total?"paid":paid>0?"partially_paid":"issued",payment.invoice_id]
-        );
+      const lockedInvoice = await client.query("SELECT total,status FROM invoices WHERE id=$1 FOR UPDATE", [payment.invoice_id]);
+      invoice = lockedInvoice.rows[0] ?? null;
+      if (!invoice) {
+        await client.query("ROLLBACK");
+        return NextResponse.json({ error: "Facture associée introuvable." }, { status: 409 });
+      }
+    }
+    if (payment.order_id) {
+      const lockedOrder = await client.query("SELECT total,status FROM orders WHERE id=$1 FOR UPDATE", [payment.order_id]);
+      order = lockedOrder.rows[0] ?? null;
+      if (!order) {
+        await client.query("ROLLBACK");
+        return NextResponse.json({ error: "Commande associée introuvable." }, { status: 409 });
       }
     }
 
-    if (payment.order_id) {
-      const sum = await client.query("SELECT COALESCE(sum(amount),0)::numeric AS paid FROM payments WHERE order_id=$1 AND status='verified'", [payment.order_id]);
-      const order = await client.query("SELECT total FROM orders WHERE id=$1 FOR UPDATE", [payment.order_id]);
-      if (order.rowCount) {
-        const paid = Number(sum.rows[0].paid);
-        const total = Number(order.rows[0].total);
-        await client.query(
-          "UPDATE orders SET payment_status=$1,updated_at=now() WHERE id=$2",
-          [paid>=total?"paid":paid>0?"partial":"unpaid",payment.order_id]
+    if (data.status === "verified") {
+      if (invoice) {
+        const other = await client.query(
+          "SELECT COALESCE(sum(amount),0)::numeric AS paid FROM payments WHERE invoice_id=$1 AND status='verified' AND id<>$2",
+          [payment.invoice_id,data.id]
         );
+        if (Number(other.rows[0].paid) + Number(payment.amount) > Number(invoice.total)) {
+          await client.query("ROLLBACK");
+          return NextResponse.json({ error: "La validation dépasserait le solde de la facture." }, { status: 409 });
+        }
       }
+      if (order) {
+        const other = await client.query(
+          "SELECT COALESCE(sum(amount),0)::numeric AS paid FROM payments WHERE order_id=$1 AND status='verified' AND id<>$2",
+          [payment.order_id,data.id]
+        );
+        if (Number(other.rows[0].paid) + Number(payment.amount) > Number(order.total)) {
+          await client.query("ROLLBACK");
+          return NextResponse.json({ error: "La validation dépasserait le solde de la commande." }, { status: 409 });
+        }
+      }
+    }
+
+    await client.query(
+      "UPDATE payments SET status=$1,verified_by=$2,verified_at=now(),paid_at=CASE WHEN $1='verified' THEN COALESCE(paid_at,now()) ELSE paid_at END,verification_note=$3 WHERE id=$4",
+      [data.status,actor.id,data.note || null,data.id]
+    );
+
+    if (invoice) {
+      const sum = await client.query("SELECT COALESCE(sum(amount),0)::numeric AS paid FROM payments WHERE invoice_id=$1 AND status='verified'", [payment.invoice_id]);
+      const paid = Number(sum.rows[0].paid);
+      const total = Number(invoice.total);
+      const nextStatus = paid >= total ? "paid" : paid > 0 ? "partially_paid" : data.status === "refunded" ? "refunded" : "issued";
+      await client.query(
+        "UPDATE invoices SET amount_paid=$1,status=$2,updated_at=now() WHERE id=$3",
+        [paid,nextStatus,payment.invoice_id]
+      );
+    }
+
+    if (order) {
+      const sum = await client.query("SELECT COALESCE(sum(amount),0)::numeric AS paid FROM payments WHERE order_id=$1 AND status='verified'", [payment.order_id]);
+      const paid = Number(sum.rows[0].paid);
+      const total = Number(order.total);
+      const nextStatus = paid >= total ? "paid" : paid > 0 ? "partial" : data.status === "refunded" ? "refunded" : "unpaid";
+      await client.query(
+        "UPDATE orders SET payment_status=$1,updated_at=now() WHERE id=$2",
+        [nextStatus,payment.order_id]
+      );
     }
 
     await client.query(
