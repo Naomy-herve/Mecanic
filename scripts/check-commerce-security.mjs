@@ -106,7 +106,7 @@ assert.match(singleGarageMigration, /Indian\/Antananarivo/, "Le garage unique do
 assert.match(singleGarageMigration, /'MGA'/, "La devise par défaut du garage doit être l’Ariary.");
 const inventoryCountsApi = read("src/app/api/admin/inventory/counts/route.ts");
 const stockPage = read("src/app/admin/stocks/page.tsx");
-assert.match(inventoryCountsApi, /countedQuantity-before/, "L’inventaire physique doit calculer l’écart par rapport au stock système.");
+assert.match(inventoryCountsApi, /data\.countedQuantity\s*-\s*before/, "L’inventaire physique doit calculer l’écart par rapport au stock système.");
 assert.match(inventoryCountsApi, /movement_type,quantity,reason,reference_type/, "Les écarts d’inventaire doivent être tracés comme ajustements.");
 assert.match(stockPage, /Valider le comptage physique/, "L’interface doit permettre de saisir le stock réellement compté.");
 const supplierOrdersApi = read("src/app/api/admin/supplier-orders/route.ts");
