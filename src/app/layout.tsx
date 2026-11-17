@@ -22,10 +22,11 @@ export const metadata: Metadata = {
     "pièces détachées",
   ],
   robots: {
-    index: true,
+    // Preview deployments must not appear in search results.
+    index: process.env.VERCEL_ENV === "production",
     follow: true,
     googleBot: {
-      index: true,
+      index: process.env.VERCEL_ENV === "production",
       follow: true,
       "max-image-preview": "large",
       "max-snippet": -1,
