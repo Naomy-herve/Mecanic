@@ -69,3 +69,9 @@
 @media(max-width:800px){.nav-wrap{height:auto;min-height:78px;flex-wrap:wrap;padding:12px 0;gap:12px}.main-nav{display:flex;order:3;width:100%;justify-content:space-between;gap:14px;padding:8px 0 2px;border-top:1px solid var(--line)}.nav-actions{gap:10px}}
 @media(max-width:540px){.nav-wrap{gap:8px}.main-nav{overflow-x:auto;justify-content:flex-start;gap:20px;white-space:nowrap;font-size:11px;padding:10px 0 3px}.nav-actions .btn{padding:10px 11px}.cart-link{padding:9px 10px}}
 :focus-visible{outline:3px solid #e9a0ad;outline-offset:3px}
+
+
+/* Keyboard accessibility: reveal the skip link only when focused. */
+.skip-link{position:fixed;left:12px;top:12px;z-index:1000;transform:translateY(-160%);padding:11px 15px;border-radius:7px;background:#fff;color:#17191d;border:2px solid var(--red);font-size:13px;font-weight:800;box-shadow:0 6px 24px #0003}
+.skip-link:focus{transform:translateY(0);outline:3px solid #e9a0ad;outline-offset:3px}
+#main-content:focus{outline:none}
