@@ -1,5 +1,5 @@
-import { ReferencePage } from "@/components/reference-pages";
+import HomeStory from "@/components/home-story";
 
-export default function Home(){
-  return <ReferencePage slug="accueil-premium"/>;
+export default function Home() {
+  return <HomeStory />;
 }
