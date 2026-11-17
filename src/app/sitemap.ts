@@ -5,14 +5,17 @@ const siteUrl = "https://kia-piece-naomy-herve.vercel.app";
 const publicPaths = [
   "",
   "/catalogue",
-  "/compte",
   "/reference/accueil-premium",
   "/reference/catalogue-pieces",
+  "/reference/tableau-de-bord",
   "/reference/boutique-classique",
   "/reference/catalogue-responsive",
   "/reference/comparateur-references",
+  "/reference/statistiques-ventes",
+  "/reference/gestion-inventaire",
   "/reference/recherche-vehicule",
   "/reference/recherche-reference",
+  "/reference/rapports-admin",
   "/reference/boutique-nocturne",
   "/reference/resultats-filtres",
 ];
@@ -20,7 +23,7 @@ const publicPaths = [
 export default function sitemap(): MetadataRoute.Sitemap {
   return publicPaths.map((path, index) => ({
     url: siteUrl + path,
-    changeFrequency: index < 3 ? "weekly" : "monthly",
+    changeFrequency: index < 2 ? "weekly" : "monthly",
     priority: index === 0 ? 1 : index === 1 ? 0.9 : 0.6,
   }));
 }
