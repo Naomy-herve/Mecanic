@@ -1,28 +1,39 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./story-home.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 const siteUrl = "https://kia-piece-naomy-herve.vercel.app";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f1f0eb" },
+    { media: "(prefers-color-scheme: dark)", color: "#101619" },
+  ],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "KIA PIÈCE — Pièces automobiles Kia",
+    default: "KIA PIÈCE — La bonne pièce pour votre Kia",
     template: "%s | KIA PIÈCE",
   },
   description:
-    "Trouvez les pièces adaptées à votre véhicule Kia. Catalogue, compatibilité et demande de devis.",
+    "Recherchez des pièces automobiles Kia, consultez les références enregistrées et contactez notre équipe pour vérifier la compatibilité et la disponibilité.",
   applicationName: "KIA PIÈCE",
   keywords: [
+    "KIA PIÈCE",
     "pièces automobiles Kia",
     "catalogue pièces Kia",
+    "pièces détachées Kia",
     "compatibilité véhicule Kia",
-    "garage Kia",
-    "pièces détachées",
+    "recherche référence Kia",
   ],
   robots: {
-    // Preview deployments must not appear in search results.
     index: process.env.VERCEL_ENV === "production",
     follow: true,
     googleBot: {
@@ -37,19 +48,30 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: siteUrl,
     siteName: "KIA PIÈCE",
-    title: "KIA PIÈCE — Pièces automobiles Kia",
+    title: "KIA PIÈCE — La bonne pièce pour votre Kia",
     description:
-      "Trouvez les pièces adaptées à votre véhicule Kia. Consultez le catalogue et demandez un devis.",
+      "Identifiez votre véhicule, recherchez une pièce et confirmez les informations avec notre équipe.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "KIA PIÈCE — Pièces automobiles Kia",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
-    title: "KIA PIÈCE — Pièces automobiles Kia",
+    card: "summary_large_image",
+    title: "KIA PIÈCE — La bonne pièce pour votre Kia",
     description:
-      "Catalogue de pièces Kia, informations de compatibilité et demande de devis.",
+      "Identifiez votre véhicule, recherchez une pièce et confirmez les informations avec notre équipe.",
+    images: ["/opengraph-image"],
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
       <body>
