@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import LocaleDocumentLanguage from "@/components/locale-document-language";
 import { notFound } from "next/navigation";
 
 type Locale = "en" | "it";
@@ -70,7 +71,9 @@ export default async function LocalizedHome({ params }: { params: Promise<{ loca
   const t = content[locale as Locale];
   const whatsapp = "https://wa.me/261385623528?text=" + encodeURIComponent(locale === "en" ? "Hello KIA PIÈCE, I would like to check a part for my Kia." : "Buongiorno KIA PIÈCE, vorrei verificare un ricambio per la mia Kia.");
   return (
-    <main className="story-home" lang={locale}>
+    <>
+      <LocaleDocumentLanguage locale={locale} />
+      <main className="story-home" lang={locale}>
       <section className="story-hero">
         <div className="story-hero-grid" aria-hidden="true" />
         <div className="story-container story-hero-inner">
@@ -90,6 +93,7 @@ export default async function LocalizedHome({ params }: { params: Promise<{ loca
       <section className="story-catalogue story-section"><div className="story-container"><div className="story-section-heading"><div><p className="story-kicker">04 / CATALOGUE</p><h2>{t.catalogue}</h2></div><Link className="story-inline-link" href="/catalogue">{t.catalogueLink} ↗</Link></div><div className="story-empty"><span className="story-kicker">KIA PIÈCE</span><h3>{t.emptyTitle}</h3><p>{t.emptyText}</p><a className="story-button story-button-dark" href={whatsapp} target="_blank" rel="noopener noreferrer">{t.ask} ↗</a></div></div></section>
       <section className="story-history story-section"><div className="story-container story-history-grid"><div><p className="story-kicker">05 / {locale === "en" ? "BACKGROUND" : "STORIA"}</p><h2>{t.history}</h2></div><div><p>{t.historyText}</p><p className="story-placeholder">{t.historyNote}</p></div></div></section>
       <section className="story-contact story-section"><div className="story-container story-contact-inner"><p className="story-kicker">06 / CONTACT</p><h2>{t.contact}</h2><p className="story-contact-copy">{t.contactText}</p><div className="story-actions"><a className="story-button story-button-light" href={whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp ↗</a><a className="story-contact-phone" href="tel:+261385623528">+261 38 56 235 28</a></div><nav className="story-language-switch" aria-label={t.language}><Link href="/">FR</Link><Link href="/en">EN</Link><Link href="/it">IT</Link></nav></div></section>
-    </main>
+      </main>
+    </>
   );
 }
