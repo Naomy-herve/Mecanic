@@ -7,6 +7,7 @@ export const metadata: Metadata = {
     "Identifiez votre véhicule, recherchez une pièce Kia et vérifiez la référence, le prix et la disponibilité avec notre équipe.",
   alternates: {
     canonical: "/",
+    languages: { fr: "/", en: "/en", it: "/it" },
   },
 };
 
