@@ -187,3 +187,9 @@ body:has(.story-home) .site-header .main-nav a:hover { color: #f15a70; }
   .story-footer-brand { grid-column: 1 / -1; }
   .story-footer-bottom { flex-direction: column; }
 }
+
+
+.story-language-switch { display: flex; gap: 8px; margin-top: 22px; }
+.story-language-switch a { display: inline-flex; min-width: 38px; min-height: 32px; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.28); color: #e7e9e5; font-size: .62rem; font-weight: 800; letter-spacing: .12em; text-decoration: none; }
+.story-language-switch a[aria-current="page"], .story-language-switch a:hover { border-color: #f15a70; color: #f15a70; }
+.story-language-switch a:focus-visible { outline: 3px solid #f15a70; outline-offset: 3px; }
