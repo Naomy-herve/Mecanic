@@ -100,6 +100,7 @@ export default function HomeStory() {
               <Link className="story-button story-button-light" href="/catalogue">Explorer le catalogue <span aria-hidden="true">↗</span></Link>
               <a className="story-button story-button-outline" href={whatsapp} target="_blank" rel="noopener noreferrer">Contacter l’équipe</a>
             </div>
+            <nav className="story-language-switch story-reveal" aria-label="Langue"><Link href="/" aria-current="page">FR</Link><Link href="/en">EN</Link><Link href="/it">IT</Link></nav>
           </div>
           <div className="story-hero-art story-reveal" aria-hidden="true">
             <div className="story-art-index">K / 01</div>
