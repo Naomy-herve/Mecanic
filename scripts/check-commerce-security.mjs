@@ -127,7 +127,10 @@ assert.match(inquiries, /NextResponse\.redirect\(new URL\("\/\?contact=sent#cont
 assert.match(read("src/app/reference/[page]/page.tsx"), /contactSent/, "La route de référence doit transmettre l’état de confirmation du formulaire.");
 assert.match(referencePages, /contactSent/, "La page d’accueil doit afficher la confirmation de demande.");
 assert.match(siteHeader, /href="\/panier"/, "Le panier doit être accessible depuis la navigation principale.");
-assert.match(siteHeader, /<Link href="\/compte">Mon compte<\/Link>/, "Le compte doit rester accessible dans la navigation mobile.");
+assert.match(siteHeader, /<Link href="\\/compte">\\{t\\.account\\}<\\/Link>/, "Le compte doit rester accessible dans la navigation mobile.");
+assert.match(siteHeader, /account: "Mon compte"/, "Le libellé du compte doit rester disponible en français.");
+assert.match(siteHeader, /account: "My account"/, "Le libellé du compte doit être traduit en anglais.");
+assert.match(siteHeader, /account: "Il mio account"/, "Le libellé du compte doit être traduit en italien.");
 assert.match(globalCss, /@media\(max-width:800px\)\{[^}]*\.nav-wrap[^}]*\}[\s\S]*?\.main-nav\{display:flex/, "La navigation principale doit rester visible sur mobile.");
 assert.match(globalCss, /:focus-visible\{outline:/, "Les éléments interactifs doivent avoir un indicateur de focus clavier.");
 
