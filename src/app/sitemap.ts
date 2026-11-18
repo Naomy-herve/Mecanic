@@ -4,6 +4,8 @@ const siteUrl = "https://kia-piece-naomy-herve.vercel.app";
 
 const publicPaths = [
   "",
+  "/en",
+  "/it",
   "/catalogue",
   "/reference/accueil-premium",
   "/reference/catalogue-pieces",
@@ -23,7 +25,7 @@ const publicPaths = [
 export default function sitemap(): MetadataRoute.Sitemap {
   return publicPaths.map((path, index) => ({
     url: siteUrl + path,
-    changeFrequency: index < 2 ? "weekly" : "monthly",
-    priority: index === 0 ? 1 : index === 1 ? 0.9 : 0.6,
+    changeFrequency: index < 4 ? "weekly" : "monthly",
+    priority: index === 0 ? 1 : index === 1 || index === 2 ? 0.8 : index === 3 ? 0.9 : 0.6,
   }));
 }
