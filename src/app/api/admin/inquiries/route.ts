@@ -1,6 +1,6 @@
 import {NextResponse} from "next/server";
 import {z} from "zod";
-import {requireAdmin} from "@/lib/auth";
+import {requireStaff} from "@/lib/auth";
 import {query} from "@/lib/db";
 
 const updateSchema=z.object({
@@ -9,7 +9,7 @@ const updateSchema=z.object({
 });
 
 export async function GET(){
-  if(!await requireAdmin())return NextResponse.json({error:"Accès refusé."},{status:403});
+  if(!await requireStaff("seller"))return NextResponse.json({error:"Accès refusé."},{status:403});
   try{
     const r=await query("SELECT id,name,email,phone,subject,message,status,created_at FROM inquiries ORDER BY CASE status WHEN 'new' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END,created_at DESC LIMIT 100");
     return NextResponse.json({inquiries:r.rows});
@@ -19,7 +19,7 @@ export async function GET(){
 }
 
 export async function PATCH(req:Request){
-  if(!await requireAdmin())return NextResponse.json({error:"Accès refusé."},{status:403});
+  if(!await requireStaff("seller"))return NextResponse.json({error:"Accès refusé."},{status:403});
   try{
     const parsed=updateSchema.safeParse(await req.json());
     if(!parsed.success)return NextResponse.json({error:"Identifiant ou statut invalide."},{status:400});

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 export async function GET() {
   if (!await requireAdmin()) {
@@ -8,12 +9,13 @@ export async function GET() {
   }
 
   try {
+    await releaseExpiredStockReservations();
     const result = await query(
       `SELECT
         (SELECT count(*)::int FROM products WHERE is_active = true) AS active_products,
         (SELECT count(*)::int FROM vehicles) AS vehicles,
         (SELECT count(*)::int FROM categories) AS categories,
-        (SELECT count(*)::int FROM products WHERE is_active = true AND stock_quantity <= 5) AS low_stock_products,
+        (SELECT count(*)::int FROM products WHERE is_active = true AND (stock_quantity - reserved_quantity) <= minimum_stock) AS low_stock_products,
         (SELECT count(*)::int FROM orders) AS total_orders,
         (SELECT count(*)::int FROM orders WHERE status = 'pending') AS pending_orders,
         (SELECT count(*)::int FROM inquiries) AS total_inquiries,

@@ -17,8 +17,8 @@ const adminPages = new Set([
 
 export function generateStaticParams(){ return slugs.map(page=>({page})); }
 
-export default async function ReferenceExperience({params}:{params:Promise<{page:string}>}){
-  const {page}=await params;
+export default async function ReferenceExperience({params,searchParams}:{params:Promise<{page:string}>;searchParams:Promise<{contact?:string|string[]}>}){
+  const [{page},{contact}]=await Promise.all([params,searchParams]);
   if(!slugs.includes(page)) notFound();
 
   // These four reference experiences display operational inventory and admin
@@ -28,5 +28,5 @@ export default async function ReferenceExperience({params}:{params:Promise<{page
     if(!admin) redirect("/compte");
   }
 
-  return <ReferencePage slug={page}/>;
+  return <ReferencePage slug={page} contactSent={contact==="sent"}/>;
 }

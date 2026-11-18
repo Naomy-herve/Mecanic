@@ -64,7 +64,7 @@ function ContactButton({label="Demander cette pièce", reference=""}:{label?:str
   return <a className="ref-cta" href={"https://wa.me/261385623528?text="+encodeURIComponent(message)} target="_blank" rel="noopener noreferrer">{label} ↗</a>;
 }
 
-export function ReferencePage({slug}:{slug:string}) {
+export function ReferencePage({slug,contactSent=false}:{slug:string;contactSent?:boolean}) {
   const page=pages.find(p=>p.slug===slug);
   const [products,setProducts]=useState<Product[]>([]);
   const [categoryItems,setCategoryItems]=useState<Category[]>([]);
@@ -163,7 +163,7 @@ export function ReferencePage({slug}:{slug:string}) {
     </div>
     {loading&&<p className="ref-notice" role="status">Chargement du catalogue réel…</p>}
     {loadError&&<p className="ref-notice" role="alert">{loadError}</p>}
-    {!loading&&!loadError&&!filtered.length&&<div className="ref-notice">Aucune pièce enregistrée ne correspond à cette recherche. Vous pouvez nous demander une référence.</div>}
+    {!loading&&!loadError&&!filtered.length&&<div className="ref-notice" role="status">{products.length ? <>Aucune pièce ne correspond à ces critères. Modifiez votre recherche ou demandez une vérification à notre équipe.</> : <><strong>Le catalogue est en préparation.</strong><p>Aucune référence réelle n’est encore publiée. Nous préférons confirmer chaque pièce, son prix et sa disponibilité plutôt que d’afficher des informations non vérifiées.</p></>}<div style={{marginTop:10}}><ContactButton label="Demander une pièce"/></div></div>}
     <div className="ref-products">
       {filtered.map((p,i)=><article className="ref-product" key={p.id}>
         <div className="ref-product-art">
@@ -191,17 +191,19 @@ export function ReferencePage({slug}:{slug:string}) {
     {!loading&&!products.length&&<p className="ref-notice">Aucune pièce réelle enregistrée. Ajoutez vos références depuis l’administration.</p>}
   </div>;
 
-  if(!page) return <main className="ref-page"><div className="ref-container"><h1>Page introuvable</h1><Link href="/reference/accueil-premium">Retour aux pages de démonstration</Link></div></main>;
+  if(!page) return <main className="ref-page"><div className="ref-container">
+      <h1>Page introuvable</h1><Link href="/reference/accueil-premium">Retour aux pages de démonstration</Link></div></main>;
 
   return <main className={"ref-page ref-"+page.style}>
     <div className="ref-container">
+      {contactSent&&<p className="ref-notice" role="status">Votre demande a bien été envoyée. Notre équipe vous répondra dès que possible.</p>}
       {page.kind!=="home"&&<><div className="ref-breadcrumb"><Link href="/">KIA PIÈCE</Link><span>/</span><span>Pages de référence</span><span>/</span><b>{page.title}</b></div>
       <div className="ref-heading"><div><div className="ref-eyebrow">{page.eyebrow}</div><h1>{page.title}</h1><p>{page.desc}</p></div><div className="ref-page-number">{page.n}<small>/ 13</small></div></div></>}
 
       {page.kind==="home"||page.kind==="premium" ? <>
         <section className="ref-hero-art"><div><span className="ref-eyebrow">PIÈCES AUTOMOBILES KIA</span><h2>La précision<br/><em>dans chaque pièce.</em></h2><p>Identifiez votre véhicule, explorez les familles de pièces et contactez notre équipe pour confirmer la disponibilité.</p><div className="ref-actions"><Link className="ref-cta" href="/reference/catalogue-pieces">Explorer le catalogue ↗</Link><ContactButton label="Contacter l’équipe"/></div></div><div className="ref-car-shape"><div className="ref-car-line"/><span>KIA</span></div></section>
         <div className="ref-categories">{categoryItems.map((c,i)=><Link key={c.id} href={"/reference/catalogue-pieces?category="+encodeURIComponent(c.slug)}><b>{String(i+1).padStart(2,"0")}</b><span>{c.name}</span><i>↗</i></Link>)}</div>
-        <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">SÉLECTION DU CATALOGUE</div><h2>Quelques références disponibles</h2></div><Link href="/reference/catalogue-pieces">Voir le catalogue complet ↗</Link></div>{productCards}</section>
+        <section className="ref-panel"><div className="ref-panel-head"><div><div className="ref-eyebrow">SÉLECTION DU CATALOGUE</div><h2>{loading ? "Chargement du catalogue…" : products.length ? "Références sélectionnées" : "Catalogue en préparation"}</h2></div><Link href="/reference/catalogue-pieces">Voir le catalogue complet ↗</Link></div>{productCards}</section>
       </> :
       page.kind==="vehicle" ? <section className="ref-panel ref-vehicle-panel"><div className="ref-eyebrow">TROUVER LES PIÈCES ADAPTÉES</div><h2>Quel est votre véhicule ?</h2><div className="ref-form-grid">
         <label>Modèle Kia{vehicles.length>0?<select value={selectedVehicleId} onChange={e=>{const v=vehicles.find(x=>x.id===e.target.value);setSelectedVehicleId(e.target.value);setVehicle(v?.model||"");setYear(v?.year_from?String(v.year_from):"");setEngine(v?.engine||"");}}><option value="">Choisir un véhicule enregistré</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.make} {v.model}{v.year_from?" · "+v.year_from+(v.year_to&&v.year_to!==v.year_from?"–"+v.year_to:""):""}{v.generation?" · "+v.generation:""}</option>)}</select>:<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder={vehiclesLoading?"Chargement des véhicules…":"Aucun véhicule enregistré — saisir le modèle"} required/>}</label>

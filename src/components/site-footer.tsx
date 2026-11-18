@@ -1,2 +1,37 @@
+"use client";
+
 import Link from "next/link";
-export function SiteFooter(){return <footer className="footer"><div className="container footer-grid"><div><Link className="brand footer-brand" href="/"><span className="brand-mark">K</span><span>KIA <b>PIÈCE</b><small>SPÉCIALISTE PIÈCES KIA</small></span></Link><p>Une expérience claire pour identifier la bonne pièce automobile Kia et contacter directement notre équipe.</p></div><div><h3>La boutique</h3><Link href="/catalogue">Catalogue pièces</Link><Link href="/compte">Mon compte</Link></div><div><h3>Contact & assistance</h3><a href="tel:+261385623528">0385623528 — Appeler</a><a href="https://wa.me/261385623528" target="_blank" rel="noopener noreferrer">Commander sur WhatsApp</a><Link href="/#contact">Envoyer une demande</Link><Link href="/admin">Administration</Link></div></div><div className="container footer-bottom">© {new Date().getFullYear()} KIA PIÈCE. Tous droits réservés.</div></footer>;}
+import { usePathname } from "next/navigation";
+
+const copy = {
+  fr: { tagline: "Identifier. Vérifier. Confirmer.", explore: "EXPLORER", catalogue: "Catalogue", vehicle: "Recherche par véhicule", compare: "Comparateur", contact: "CONTACT", account: "Mon compte", note: "Les informations de disponibilité sont confirmées avant commande.", phone: "038 56 235 28" },
+  en: { tagline: "Identify. Verify. Confirm.", explore: "EXPLORE", catalogue: "Catalogue", vehicle: "Search by vehicle", compare: "Reference comparison", contact: "CONTACT", account: "My account", note: "Availability is confirmed before an order is placed.", phone: "+261 38 56 235 28" },
+  it: { tagline: "Identificare. Verificare. Confermare.", explore: "ESPLORA", catalogue: "Catalogo", vehicle: "Ricerca per veicolo", compare: "Confronto codici", contact: "CONTATTI", account: "Il mio account", note: "La disponibilità viene confermata prima dell'ordine.", phone: "+261 38 56 235 28" },
+} as const;
+
+export function SiteFooter() {
+  const pathname = usePathname() || "/";
+  const locale = pathname.startsWith("/en") ? "en" : pathname.startsWith("/it") ? "it" : "fr";
+  const t = copy[locale];
+  const home = locale === "fr" ? "/" : "/" + locale;
+  return (
+    <footer className="story-footer">
+      <div className="story-container story-footer-main">
+        <div className="story-footer-brand">
+          <Link className="brand footer-brand" href={home}><span className="brand-mark">K</span><span>KIA <b>PIÈCE</b><small>KIA AUTOMOTIVE PARTS</small></span></Link>
+          <p>{t.tagline}</p>
+        </div>
+        <nav aria-label={t.explore}>
+          <span>{t.explore}</span><Link href="/catalogue">{t.catalogue}</Link><Link href="/reference/recherche-vehicule">{t.vehicle}</Link><Link href="/reference/comparateur-references">{t.compare}</Link>
+        </nav>
+        <nav aria-label={t.contact}>
+          <span>{t.contact}</span><Link href="/compte">{t.account}</Link><a href="tel:+261385623528">{t.phone}</a><a href="https://wa.me/261385623528" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>
+        </nav>
+      </div>
+      <div className="story-container story-footer-bottom">
+        <span>© {new Date().getFullYear()} KIA PIÈCE</span><span>{t.note}</span>
+        <nav aria-label="Language / Lingua / Langue"><Link href="/">FR</Link> · <Link href="/en">EN</Link> · <Link href="/it">IT</Link></nav>
+      </div>
+    </footer>
+  );
+}

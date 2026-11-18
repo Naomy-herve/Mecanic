@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 export async function GET() {
   const user = await getSession();
@@ -9,6 +10,7 @@ export async function GET() {
   }
 
   try {
+    await releaseExpiredStockReservations();
     // Always scope the query to the authenticated account; never accept a user ID from the URL.
     const result = await query(
       `SELECT

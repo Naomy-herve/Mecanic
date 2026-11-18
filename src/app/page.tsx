@@ -1,5 +1,16 @@
-import { ReferencePage } from "@/components/reference-pages";
+import type { Metadata } from "next";
+import HomeStory from "@/components/home-story";
 
-export default function Home(){
-  return <ReferencePage slug="accueil-premium"/>;
+export const metadata: Metadata = {
+  title: "La bonne pièce pour votre Kia",
+  description:
+    "Identifiez votre véhicule, recherchez une pièce Kia et vérifiez la référence, le prix et la disponibilité avec notre équipe.",
+  alternates: {
+    canonical: "/",
+    languages: { fr: "/", en: "/en", it: "/it" },
+  },
+};
+
+export default function Home() {
+  return <HomeStory />;
 }

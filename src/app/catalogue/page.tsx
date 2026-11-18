@@ -2,10 +2,11 @@ import Link from "next/link";
 import ProductImage from "@/components/product-image";
 import { AddToCart } from "@/components/add-to-cart";
 import { query } from "@/lib/db";
+import { releaseExpiredStockReservations } from "@/lib/inventory";
 
 type Product = {
   id: string; sku: string; name: string; slug: string; description: string;
-  price: string; currency: string; stock_quantity: number; condition: string;
+  price: string; currency: string; stock_quantity: number; available_quantity: number; condition: string;
   image_url: string | null; category_name: string | null;
 };
 type Params = {
@@ -19,7 +20,7 @@ const ORDER_BY: Record<string, string> = {
   price_asc: "p.currency ASC, p.price ASC, p.name ASC",
   price_desc: "p.currency ASC, p.price DESC, p.name ASC",
   name: "p.name ASC",
-  stock: "p.stock_quantity DESC, p.name ASC",
+  stock: "GREATEST(0,p.stock_quantity-p.reserved_quantity) DESC, p.name ASC",
 };
 
 function money(value: string, currency: string) {
@@ -61,10 +62,11 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
     ))
     AND ($6::numeric IS NULL OR p.price >= $6)
     AND ($7::numeric IS NULL OR p.price <= $7)
-    AND ($8 = '' OR p.stock_quantity > 0)
+    AND ($8 = '' OR (p.stock_quantity-p.reserved_quantity) > 0)
     AND ($9 = '' OR p.currency = $9)`;
 
   try {
+    await releaseExpiredStockReservations();
     cats = (await query<{ name: string; slug: string }>("SELECT name, slug FROM categories ORDER BY name")).rows;
     const count = await query<{ total: string }>(
       `SELECT count(*)::text AS total FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE ${where}`,
@@ -75,7 +77,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
     const page = Math.min(requestedPage, totalPages);
     products = (await query<Product>(
       `SELECT p.id, p.sku, p.name, p.slug, p.description, p.price, p.currency,
-        p.stock_quantity, p.condition, p.image_url, c.name AS category_name
+        p.stock_quantity, GREATEST(0,p.stock_quantity-p.reserved_quantity) AS available_quantity, p.condition, p.image_url, c.name AS category_name
        FROM products p LEFT JOIN categories c ON c.id = p.category_id
        WHERE ${where} ORDER BY ${ORDER_BY[sort]} LIMIT $10 OFFSET $11`,
       [...values, PAGE_SIZE, (page - 1) * PAGE_SIZE]
@@ -145,9 +147,9 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
                     <span className="badge">{p.category_name || "Pièce Kia"} · {p.condition === "new" ? "Neuf" : p.condition === "used" ? "Occasion" : "Reconditionné"}</span>
                     <h3>{p.name}</h3>
                     <p className="muted">Réf. {p.sku}</p>
-                    <p className="muted">{p.stock_quantity > 0 ? `${p.stock_quantity} disponible(s)` : "Disponibilité à confirmer"}</p>
+                    <p className="muted">{p.available_quantity > 0 ? `${p.available_quantity} disponible(s)` : "Disponibilité à confirmer"}</p>
                     <div className="price">{money(p.price, p.currency)}</div>
-                    <div style={{display:"grid",gap:8,marginTop:12}}><Link className="btn btn-outline" href={"/produit/" + p.slug}>Voir la pièce</Link><AddToCart product={{id:p.id,sku:p.sku,name:p.name,price:Number(p.price),currency:p.currency}} disabled={p.stock_quantity<=0}/></div>
+                    <div style={{display:"grid",gap:8,marginTop:12}}><Link className="btn btn-outline" href={"/produit/" + p.slug}>Voir la pièce</Link><AddToCart product={{id:p.id,sku:p.sku,name:p.name,price:Number(p.price),currency:p.currency}} disabled={p.available_quantity<=0}/></div>
                   </div>
                 </article>
               ))}
