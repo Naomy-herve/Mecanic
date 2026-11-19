@@ -34,7 +34,7 @@ html[data-theme="dark"] {
     background: #111923;
   }
 }
-html[data-theme="dark"] body,
+html[data-theme="dark"] body { background:#111923; color:#edf1f5; }
 @media (prefers-color-scheme: dark) { html[data-theme="system"] body { background:#111923; color:#edf1f5; } }
 html[data-theme="dark"] .section-soft,
 html[data-theme="dark"] .page-shell,
