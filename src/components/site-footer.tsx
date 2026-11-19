@@ -18,7 +18,7 @@ export function SiteFooter() {
     <footer className="story-footer">
       <div className="story-container story-footer-main">
         <div className="story-footer-brand">
-          <Link className="brand footer-brand" href={home}><span className="brand-mark">K</span><span>KIA <b>PIÈCE</b><small>KIA AUTOMOTIVE PARTS</small></span></Link>
+          <Link className="brand footer-brand" href={home}><img className="brand-logo footer-logo" src="/images/kia-hyundai-mark.svg" alt="KIA K5 et Hyundai Sonata" width="142" height="80" /></Link>
           <p>{t.tagline}</p>
         </div>
         <nav aria-label={t.explore}>

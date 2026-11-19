@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const labels = {
   fr: { catalogue: "Catalogue", method: "Méthode", contact: "Contact", account: "Mon compte", cart: "Panier", menu: "Menu", openMenu: "Ouvrir le menu de navigation", nav: "Navigation principale", mobile: "Navigation mobile", brand: "SPÉCIALISTE PIÈCES KIA" },
@@ -27,11 +28,11 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="container nav-wrap">
         <Link className="brand" href={home} aria-label="KIA PIÈCE — Home">
-          <span className="brand-mark">K</span>
-          <span>KIA <b>PIÈCE</b><small>{t.brand}</small></span>
+          <img className="brand-logo" src="/images/kia-hyundai-mark.svg" alt="KIA K5 et Hyundai Sonata" width="142" height="80" />
         </Link>
         <nav className="main-nav" aria-label={t.nav}>{navigation}</nav>
         <div className="nav-actions">
+          <ThemeToggle />
           <Link className="cart-link" href="/panier">{t.cart} ↗</Link>
           <a className="btn btn-primary" href="https://wa.me/261385623528" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>
         </div>
