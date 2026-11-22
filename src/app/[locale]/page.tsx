@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import LocaleDocumentLanguage from "@/components/locale-document-language";
 import { notFound } from "next/navigation";
 
@@ -84,7 +85,7 @@ export default async function LocalizedHome({ params }: { params: Promise<{ loca
             <div className="story-actions"><Link className="story-button story-button-light" href="/catalogue">{t.catalogueLink} ↗</Link><a className="story-button story-button-outline" href={whatsapp} target="_blank" rel="noopener noreferrer">{t.contactLink}</a></div>
             <nav className="story-language-switch" aria-label={t.language}><Link href="/">FR</Link><Link href="/en" aria-current={locale === "en" ? "page" : undefined}>EN</Link><Link href="/it" aria-current={locale === "it" ? "page" : undefined}>IT</Link></nav>
           </div>
-          <div className="story-hero-art" aria-hidden="true"><div className="story-art-index">K / 01</div><div className="story-art-ring story-art-ring-one"/><div className="story-art-ring story-art-ring-two"/><svg className="story-car-drawing" viewBox="0 0 620 300" fill="none"><path d="M72 190L104 130C115 108 134 94 160 88L240 70C268 64 295 63 323 70L408 94C432 101 450 117 463 139L500 190L532 201V236H55V207L72 190Z" fill="#53656B" stroke="#D9E0E2" strokeWidth="2"/><path d="M157 111L246 91C270 86 292 86 315 92L393 113L424 158H130L157 111Z" fill="#1A2A32" stroke="#AEBBC0" strokeWidth="2"/><path d="M267 91V157M116 160H455M72 190H532" stroke="#F25B72" strokeWidth="3"/><circle cx="157" cy="231" r="38" fill="#11191D" stroke="#8B9699" strokeWidth="8"/><circle cx="430" cy="231" r="38" fill="#11191D" stroke="#8B9699" strokeWidth="8"/></svg></div>
+          <div className="story-hero-art" aria-hidden="true"><div className="story-art-index">K / 01</div><div className="story-art-ring story-art-ring-one"/><div className="story-art-ring story-art-ring-two"/><Image className="story-car-drawing story-car-photo" src="/images/kia-k5-sonata-hero.svg" alt="Kia K5 and Hyundai Sonata side by side" width={1100} height={435} priority/><div className="story-art-caption"><span>{locale === "en" ? "IDENTIFY" : "IDENTIFICA"}</span><span>{locale === "en" ? "VERIFY" : "VERIFICA"}</span><span>{locale === "en" ? "CONFIRM" : "CONFERMA"}</span></div></div>
         </div>
       </section>
       <section className="story-manifesto story-section"><div className="story-container story-manifesto-grid"><div className="story-manifesto-mark"><div className="story-monogram">K.</div><p>KIA PIÈCE · 01</p></div><div className="story-manifesto-copy"><p className="story-kicker">01 / {locale === "en" ? "OUR APPROACH" : "IL NOSTRO APPROCCIO"}</p><h2>{t.approach}</h2><p>{t.approachText}</p><blockquote>“{t.quote}”</blockquote></div></div></section>
