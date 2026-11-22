@@ -28,7 +28,8 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="container nav-wrap">
         <Link className="brand" href={home} aria-label="KIA PIÈCE — Home">
-          <img className="brand-logo" src="/images/kia-hyundai-mark.svg" alt="KIA K5 et Hyundai Sonata" width="142" height="80" />
+          <img className="brand-logo" src="/images/kia-hyundai-mark.svg" alt="Logo Kia K5 et Hyundai Sonata" width="64" height="64" />
+          <span className="brand-copy"><strong className="brand-name">Kia pièce</strong><span className="brand-slogan">{locale === "en" ? "Boost your car with the right parts" : locale === "it" ? "Dai slancio alla tua auto con i ricambi giusti" : "Boostez votre voiture avec les bonnes pièces"}</span></span>
         </Link>
         <nav className="main-nav" aria-label={t.nav}>{navigation}</nav>
         <div className="nav-actions">
