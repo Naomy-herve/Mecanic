@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import ProductImage from "@/components/product-image";
 
@@ -102,22 +103,18 @@ export default function HomeStory() {
             </div>
             <nav className="story-language-switch story-reveal" aria-label="Langue"><Link href="/" aria-current="page">FR</Link><Link href="/en">EN</Link><Link href="/it">IT</Link></nav>
           </div>
-          <div className="story-hero-art story-reveal" aria-hidden="true">
+          <div className="story-hero-art story-reveal">
             <div className="story-art-index">K / 01</div>
             <div className="story-art-ring story-art-ring-one" />
             <div className="story-art-ring story-art-ring-two" />
-            <svg className="story-car-drawing" viewBox="0 0 620 300" fill="none">
-              <path d="M72 190L104 130C115 108 134 94 160 88L240 70C268 64 295 63 323 70L408 94C432 101 450 117 463 139L500 190L532 201V236H55V207L72 190Z" fill="url(#carPaint)" stroke="#D9E0E2" strokeWidth="2"/>
-              <path d="M157 111L246 91C270 86 292 86 315 92L393 113L424 158H130L157 111Z" fill="#1A2A32" stroke="#AEBBC0" strokeWidth="2"/>
-              <path d="M267 91V157M116 160H455" stroke="#8D9BA0" strokeWidth="2"/>
-              <path d="M72 190H532" stroke="#F25B72" strokeWidth="5"/>
-              <path d="M84 191H129M464 191H515" stroke="#F8D9DE" strokeWidth="7" strokeLinecap="round"/>
-              <circle cx="157" cy="231" r="38" fill="#11191D" stroke="#8B9699" strokeWidth="8"/>
-              <circle cx="157" cy="231" r="13" fill="#B8C1C2"/>
-              <circle cx="430" cy="231" r="38" fill="#11191D" stroke="#8B9699" strokeWidth="8"/>
-              <circle cx="430" cy="231" r="13" fill="#B8C1C2"/>
-              <defs><linearGradient id="carPaint" x1="150" y1="65" x2="430" y2="245" gradientUnits="userSpaceOnUse"><stop stopColor="#AAB7B9"/><stop offset=".5" stopColor="#53656B"/><stop offset="1" stopColor="#26343A"/></linearGradient></defs>
-            </svg>
+            <Image
+              className="story-car-drawing story-car-photo"
+              src="/images/kia-k5-sonata-hero.svg"
+              alt="Kia K5 bleue et Hyundai Sonata grise présentées côte à côte"
+              width={360}
+              height={237}
+              priority
+            />
             <div className="story-art-caption"><span>IDENTIFIER</span><span>VÉRIFIER</span><span>CONFIRMER</span></div>
           </div>
         </div>

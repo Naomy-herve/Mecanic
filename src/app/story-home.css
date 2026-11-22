@@ -42,7 +42,7 @@
 .story-art-ring-one { transform: scale(.76); }
 .story-art-ring-two { border-style: dashed; opacity: .55; }
 .story-art-index { position: absolute; top: 5%; right: 4%; color: #aeb8b5; font-size: .65rem; letter-spacing: .17em; }
-.story-car-drawing { position: relative; z-index: 1; width: 115%; max-width: 650px; filter: drop-shadow(0 28px 28px rgba(0,0,0,.35)); }
+.story-car-drawing { position: relative; z-index: 1; width: 115%; max-width: 650px; filter: drop-shadow(0 28px 28px rgba(0,0,0,.35)); }\n.story-car-photo { width: min(115%, 620px); height: auto; max-height: 360px; object-fit: contain; border-radius: 4px; }
 .story-art-caption { position: absolute; bottom: 4%; display: flex; gap: 18px; color: #9da9a5; font-size: .55rem; letter-spacing: .15em; }
 .story-scroll, .story-hero-count { position: absolute; bottom: 26px; color: #aeb8b5; font-size: .57rem; letter-spacing: .15em; text-decoration: none; }
 .story-scroll { left: max(24px, calc((100% - 1220px) / 2)); display: flex; align-items: center; gap: 12px; }
