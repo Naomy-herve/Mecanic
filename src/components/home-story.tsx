@@ -111,8 +111,8 @@ export default function HomeStory() {
               className="story-car-drawing story-car-photo"
               src="/images/kia-k5-sonata-hero.svg"
               alt="Kia K5 bleue et Hyundai Sonata grise présentées côte à côte"
-              width={360}
-              height={237}
+              width={1100}
+              height={435}
               priority
             />
             <div className="story-art-caption"><span>IDENTIFIER</span><span>VÉRIFIER</span><span>CONFIRMER</span></div>
