@@ -18,8 +18,7 @@ export function SiteFooter() {
     <footer className="story-footer">
       <div className="story-container story-footer-main">
         <div className="story-footer-brand">
-          <Link className="brand footer-brand" href={home}><img className="brand-logo footer-logo" src="/images/kia-hyundai-mark.svg" alt="KIA K5 et Hyundai Sonata" width="142" height="80" /></Link>
-          <p>{t.tagline}</p>
+          <Link className="brand footer-brand" href={home}><img className="brand-logo footer-logo" src="/images/kia-hyundai-mark.svg" alt="Logo Kia K5 et Hyundai Sonata" width="64" height="64" /><span className="brand-copy"><strong className="brand-name">Kia pièce</strong><span className="brand-slogan">{locale === "en" ? "Boost your car with the right parts" : locale === "it" ? "Dai slancio alla tua auto con i ricambi giusti" : "Boostez votre voiture avec les bonnes pièces"}</span></span></Link>
         </div>
         <nav aria-label={t.explore}>
           <span>{t.explore}</span><Link href="/catalogue">{t.catalogue}</Link><Link href="/reference/recherche-vehicule">{t.vehicle}</Link><Link href="/reference/comparateur-references">{t.compare}</Link>
